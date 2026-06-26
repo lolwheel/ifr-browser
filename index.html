@@ -1,0 +1,346 @@
+<!doctype html><html><head><meta charset="utf-8"><title>BIOS IFR Browser</title>
+<style>
+:root{--bg:#0a1530;--bar:#13284f;--fg:#cfe0ff;--mut:#7e93bf;--acc:#7ab8ff;--gold:#ffd479;--line:#1d3461;--rowh:#15315f}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;display:flex;flex-direction:column}
+header{background:#06102a;border-bottom:1px solid var(--line);padding:8px 12px;display:flex;flex-wrap:wrap;gap:10px;row-gap:8px;align-items:center;flex:none}
+header b{color:var(--gold);flex:none}
+#stats{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{background:#13284f;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit;white-space:nowrap;flex:none}
+.btn:hover{border-color:var(--acc)}
+.sbox{position:relative;flex:1 1 340px;min-width:240px;max-width:580px}
+.sbox:before{content:"\1F50D";position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.55;pointer-events:none}
+#search{width:100%;padding:7px 10px 7px 30px;background:#0c1832;border:1px solid var(--line);border-radius:6px;color:var(--fg);font:inherit}
+#search:focus{border-color:var(--acc);outline:none}
+#main{flex:1;display:flex;min-height:0}
+#side{width:280px;border-right:1px solid var(--line);overflow:auto;background:#091228;flex:none}
+.sidehdr{padding:6px 12px;color:#5d6f99;font-size:10.5px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em}
+#side .sf{padding:5px 12px;cursor:pointer;color:var(--mut);border-bottom:1px solid #0e1a33;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#side .sf:hover{background:var(--rowh);color:var(--fg)}#side .sf.act{background:var(--bar);color:var(--gold)}
+#view{flex:1;overflow:auto}
+#crumb{padding:8px 16px;color:var(--mut);background:#091228;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+#crumb a{color:var(--acc);cursor:pointer}#crumb .bk{color:var(--gold);margin-right:10px;cursor:pointer}
+.form{max-width:1100px;margin:0 auto;padding:6px 0 60px}
+.ftitle{text-align:center;color:var(--gold);font-weight:700;letter-spacing:.06em;padding:14px 14px 4px;text-transform:uppercase}
+.backlinks{text-align:center;font-size:11.5px;color:var(--mut);padding:0 14px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.backlinks a{color:var(--acc);cursor:pointer}.backlinks a:hover{text-decoration:underline}
+.backlinks .none{color:#5d6f99;font-style:italic}.backlinks .meta{color:#456}
+.sub{color:var(--acc);font-weight:700;margin:16px 12px 4px;border-bottom:1px dashed var(--line);padding-bottom:3px}
+.row{display:flex;gap:12px;align-items:flex-start;padding:5px 14px;border-bottom:1px solid #0c1730}
+.row:hover{background:var(--rowh)}.row .l{flex:1;min-width:240px}.row .nm{color:var(--fg)}
+.row.menu .nm{color:var(--acc);cursor:pointer}.row.menu .nm:before{content:"\25BA  ";color:var(--gold)}
+.row.menu:hover{background:var(--bar)}
+.row .hp{color:var(--mut);font-size:11.5px;margin-top:2px;max-width:780px}
+.row .rt{flex:none;text-align:right;min-width:150px;color:var(--gold)}
+.opt{display:inline-block;background:#0c1832;border:1px solid var(--line);border-radius:3px;padding:0 6px;margin:1px 0 1px 4px;font-size:11px;color:var(--mut)}
+.opt.def{color:var(--gold);border-color:#4a4226}
+.meta{color:#5d6f99;font-size:10.5px;margin-top:2px}
+.hint code{background:#06102a;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:#8ee69a;font-size:11px;cursor:pointer}
+.cond{margin:4px 0 2px;padding:2px 0 2px 10px;border-left:3px solid #6b4a8f;color:#caa9e6;font-size:11.5px}
+.cond b{color:#e6c8ff;font-weight:600}
+.cond a.cref{color:#bfe0ff;cursor:pointer;border-bottom:1px dotted #5a7db0}
+.cond a.cref:hover{color:#fff;border-bottom-color:#bfe0ff;background:#1c3a66}
+.cgrp{border-left:1px dashed #2a2350;margin-left:6px;padding-left:6px}
+.depthpad{padding-left:calc(var(--d,0)*14px)}
+#results{position:absolute;left:0;right:0;top:100%;background:#0c1832;border:1px solid var(--line);max-height:60vh;overflow:auto;display:none;z-index:20}
+#results .r{padding:6px 12px;cursor:pointer;border-bottom:1px solid #0e1a33}#results .r:hover{background:var(--bar)}
+#results .f{color:var(--gold)}#results .h{color:var(--mut);font-size:11px;margin-top:2px}
+#results .tag{background:#3a2f5e;color:#cbb6ff;border-radius:3px;padding:0 5px;font-size:10px;margin-left:6px;text-transform:uppercase}
+#results .h .cl{color:#8aa0c8}#results mark{background:var(--acc);color:#06102a;border-radius:2px}
+.hl{background:#143a6b;outline:1px solid var(--acc)}
+.empty{color:var(--mut);text-align:center;padding:60px 20px;font-size:14px}
+.empty b{color:var(--gold)}
+body.drag:after{content:"\2913  drop .ifr.txt to load";position:fixed;inset:0;background:rgba(8,16,40,.88);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:24px;z-index:100;border:3px dashed var(--acc)}
+select.ctl,input.ctl{background:#0c1832;color:var(--fg);border:1px solid var(--line);border-radius:4px;font:inherit;font-size:11px;padding:2px 4px;max-width:240px}
+select.ctl:focus,input.ctl:focus{border-color:var(--acc);outline:none}
+input.ctl.num{width:140px}
+.row.changed{background:#13233f}.row.changed>.l>.nm{color:var(--gold)}
+.row.changed select.ctl,.row.changed input.ctl{border-color:var(--gold);color:var(--gold)}
+.cmds{position:fixed;right:14px;bottom:14px;width:480px;max-width:46vw;background:#0b1730;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.55);z-index:40;display:flex;flex-direction:column}
+.cmds.has{border-color:var(--gold)}
+.cmdhdr{display:flex;gap:8px;align-items:center;padding:7px 10px;cursor:pointer;border-bottom:1px solid var(--line);user-select:none}
+.cmdhdr .ttl{color:var(--gold);font-weight:700}.cmdhdr #cmdcount{color:var(--mut)}.cmdhdr .grow{flex:1}
+.cmds.collapsed #cmdbox{display:none}.cmds.collapsed .cmdhdr{border-bottom:none}
+#cmdbox{height:210px;overflow:auto;background:#06102a;border-radius:0 0 8px 8px}
+.citem{position:relative;padding:5px 30px 6px 9px;border-bottom:1px solid #0e1a33;cursor:pointer;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace}
+.citem:hover{background:#11233f}
+.citem .cl1{color:#7e93bf}.citem .cl2{color:#9ee6a6;white-space:pre-wrap;word-break:break-all}
+.cdel{position:absolute;right:6px;top:6px;background:#2a1530;color:#ff9a9a;border:1px solid #5a2a3a;border-radius:4px;cursor:pointer;font:inherit;line-height:1;padding:1px 7px}
+.cdel:hover{background:#4a1a2a;color:#fff}
+.cempty{color:var(--mut);padding:16px;text-align:center}
+.btn.sm{padding:3px 8px;font-size:11px}
+</style></head><body>
+<header><b>BIOS IFR Browser</b> <span id="stats" style="color:var(--mut)">loading…</span>
+<label class="btn">Load .ifr.txt<input id="file" type="file" accept=".txt,.ifr" style="display:none"></label>
+<button class="btn" id="forget" style="display:none" onclick="clearSaved()" title="Remove the saved dump from this browser">forget</button>
+<div class="sbox"><input id="search" placeholder="search settings, help, options, offsets… (tdc, 0x191, turbo performance)"><div id="results"></div></div>
+</header>
+<div id="main"><div id="side"></div><div id="view"><div id="crumb"></div><div id="form" class="form"><div class="empty">loading…</div></div></div></div>
+<div id="cmds" class="cmds">
+ <div class="cmdhdr" onclick="if(event.target.tagName!=='BUTTON')document.getElementById('cmds').classList.toggle('collapsed')">
+  <span class="ttl">⌨ startup.nsh</span> <span id="cmdcount">0 changes</span><span class="grow"></span>
+  <button class="btn sm" onclick="copyCmds()" title="Copy the setup_var.efi commands">copy</button><button class="btn sm" onclick="saveCmds()" title="Download just startup.nsh">.nsh</button><button class="btn sm" onclick="downloadBundle()" title="Download a ready-to-boot USB .zip: UEFI shell + setup_var.efi + your startup.nsh">bundle&nbsp;.zip</button><button class="btn sm" onclick="clearCmds()">clear</button>
+ </div>
+ <div id="cmdbox" class="cmdlist"></div>
+</div>
+<script type="text/plain" id="lic-setupvar">MIT License
+
+Copyright (c) 2022 datasone
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</script>
+<script type="text/plain" id="lic-shell">Copyright (c) 2019, TianoCore and contributors.  All rights reserved.
+
+SPDX-License-Identifier: BSD-2-Clause-Patent
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+Subject to the terms and conditions of this license, each copyright holder
+and contributor hereby grants to those receiving rights under this license
+a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+(except for failure to satisfy the conditions of this license) patent
+license to make, have made, use, offer to sell, sell, import, and otherwise
+transfer this software, where such license applies only to those patent
+claims, already acquired or hereafter acquired, licensable by such copyright
+holder or contributor that are necessarily infringed by:
+
+(a) their Contribution(s) (the licensed copyrights of copyright holders and
+    non-copyrightable additions of contributors, in source or binary form)
+    alone; or
+
+(b) combination of their Contribution(s) with the work of authorship to
+    which such Contribution(s) was added by such copyright holder or
+    contributor, if, at the time the Contribution is added, such addition
+    causes such combination to be necessarily infringed. The patent license
+    shall not apply to any other combinations which include the
+    Contribution.
+
+Except as expressly stated above, no rights or licenses from any copyright
+holder or contributor is granted under this license, whether expressly, by
+implication, estoppel or otherwise.
+
+DISCLAIMER
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+</script>
+<script type="text/plain" id="bin-setupvar"></script>
+<script type="text/plain" id="bin-shell"></script>
+<script type="text/plain" id="ifr"></script>
+<script>
+var esc=function(s){return (s==null?'':String(s)).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+var D={},FORMS={},ORDER=[],TITLES={},IDX=[],nav=[];
+var side=document.getElementById('side'),view=document.getElementById('form'),crumb=document.getElementById('crumb'),sb=document.getElementById('search'),res=document.getElementById('results'),stats=document.getElementById('stats');
+var EXPR={},COND={},SKIP={},QLEAF={},SYM={Equal:'==',NotEqual:'!=',LessThan:'&lt;',LessEqual:'&lt;=',GreaterThan:'&gt;',GreaterEqual:'&gt;=',BitwiseAnd:'&amp;',BitwiseOr:'|'};
+'EqIdVal EqIdValList EqIdId And Or Not True False Equal NotEqual LessThan LessEqual GreaterThan GreaterEqual BitwiseAnd BitwiseOr QuestionRef1 Get Uint8 Uint16 Uint32 Uint64 Value Conditional Match StringRef1 ToString Dup Catenate Span Find Mid Token'.split(' ').forEach(function(x){EXPR[x]=1});
+'SuppressIf GrayOutIf DisableIf InconsistentIf NoSubmitIf WarningIf'.split(' ').forEach(function(x){COND[x]=1});
+'End Default FormSet DefaultStore Guid VarStore VarStoreNameValue VarStoreEfi Image Locked Modal RefreshId Refresh Animation ResetButton'.split(' ').forEach(function(x){SKIP[x]=1});
+'OneOf Numeric CheckBox Text OrderedList Date Time Password String Action'.split(' ').forEach(function(x){QLEAF[x]=1});
+var _rc={};
+function attr(s,k,quoted){var key=k+(quoted?'"':'#');var re=_rc[key];if(!re){re=_rc[key]=quoted?new RegExp(k+': "([^"]*)"'):new RegExp(k+': (0x[0-9A-Fa-f]+|\\d+)');}var m=re.exec(s);return m?m[1]:null;}
+function buildData(text){
+ var LINE=/^0x[0-9A-Fa-f]+:[ ]?(\t*)(.*)$/, recs=[], arr=text.split(/\r?\n/);
+ for(var li=0;li<arr.length;li++){var m=LINE.exec(arr[li]);if(!m)continue;var body=m[2].replace(/\s+$/,'');if(!body)continue;recs.push([m[1].length,body.split(' ',1)[0].replace(/:$/,''),body]);}
+ var vs={};
+ for(var i=0;i<recs.length;i++)if(recs[i][1]==='VarStore'){var mm=recs[i][2].match(/VarStoreId: (0x[0-9A-Fa-f]+), Size: 0x[0-9A-Fa-f]+, Name: "([^"]+)"/);if(mm)vs[parseInt(mm[1],16)]=mm[2];}
+ var qmap={},qform={},cf=null;
+ for(i=0;i<recs.length;i++){var b=recs[i][2];if(recs[i][1]==='Form')cf=attr(b,'FormId',0);var qid=attr(b,'QuestionId',0);if(qid){var k=parseInt(qid,16),nm=attr(b,'Prompt',1);if(!(k in qmap)||nm)qmap[k]={nm:nm,vs:attr(b,'VarStoreId',0),off:attr(b,'VarOffset',0)};if(nm&&cf&&!(k in qform))qform[k]=cf;}}
+ function vhint(b){var vsid=attr(b,'VarStoreId',0),off=attr(b,'VarOffset',0),sz=attr(b,'Size',0);if(!(vsid&&off&&sz))return '';var nb=Math.max(1,(parseInt(sz)/8)|0);return 'setup_var.efi '+off+' <val> -s 0x'+nb.toString(16).toUpperCase()+' -n '+(vs[parseInt(vsid,16)]||('VS'+vsid));}
+ function qlink(qid){if(!qid)return '?';var e=qmap[parseInt(qid,16)];if(e&&e.nm){var loc=(e.vs&&e.off)?(' @'+(vs[parseInt(e.vs,16)]||e.vs)+':'+e.off):'';var disp=esc(e.nm)+esc(loc);var fid=qform[parseInt(qid,16)];if(fid){var tn=e.nm.toLowerCase().replace(/['"]/g,'');return '<a class="cref" onclick="navTo(\''+fid+'\',{text:\''+tn+'\'})">'+disp+'</a>';}return disp;}return 'Q'+esc(qid);}
+ function renderExpr(ex){var st=[];for(var i2=0;i2<ex.length;i2++){var op=ex[i2][1],b=ex[i2][2];
+  if(op==='EqIdVal')st.push(qlink(attr(b,'QuestionId',0))+' == '+esc(attr(b,'Value',0)));
+  else if(op==='EqIdValList')st.push(qlink(attr(b,'QuestionId',0))+' &isin; {list}');
+  else if(op==='EqIdId'){var ids=(b.match(/QuestionId\d?: (0x[0-9A-Fa-f]+)/g)||[]).map(function(s){return s.replace(/.*: /,'')});st.push(ids.length>=2?(qlink(ids[0])+' == '+qlink(ids[1])):'EqIdId');}
+  else if(op==='QuestionRef1'||op==='Get')st.push(qlink(attr(b,'QuestionId',0)));
+  else if(op==='Uint8'||op==='Uint16'||op==='Uint32'||op==='Uint64'||op==='Value')st.push(esc(attr(b,'Value',0)||op));
+  else if(op==='True')st.push('TRUE'); else if(op==='False')st.push('FALSE');
+  else if(op==='Not')st.push('!('+(st.pop()||'?')+')');
+  else if(op==='And'||op==='Or'){var y=st.pop()||'?',x=st.pop()||'?';st.push('('+x+' '+(op==='And'?'&amp;&amp;':'||')+' '+y+')');}
+  else if(SYM[op]){var y2=st.pop()||'?',x2=st.pop()||'?';st.push('('+x2+' '+SYM[op]+' '+y2+')');}
+  else st.push(esc(op));}
+  return st.join(' ');}
+ function make(op,b){var n={op:op,label:attr(b,'Title',1)||attr(b,'Prompt',1)||op,help:attr(b,'Help',1)||'',opts:[],children:[],meta:''};var meta=[];['VarStoreId','VarOffset','Size','Min','Max'].forEach(function(k){var v=attr(b,k,0);if(v)meta.push(k+'='+v);});n.meta=meta.join(' ');var vo=attr(b,'VarOffset',0),vsi=attr(b,'VarStoreId',0),vsz=attr(b,'Size',0);if(vo&&vsi&&vsz){n.off=vo;n.vsn=vs[parseInt(vsi,16)]||('VS'+vsi);n.bytes=Math.max(1,(parseInt(vsz)/8)|0);}if(QLEAF[op])n.hint=vhint(b);if(op==='Ref')n.ref=attr(b,'FormId',0);var t=attr(b,'Text',1);if(t&&op==='Text')n.help=(n.help+'  ['+t+']').replace(/^\s+|\s+$/g,'');return n;}
+ function parse(items){var nodes=[],i3=0,N=items.length;while(i3<N){var d=items[i3][0],op=items[i3][1],b=items[i3][2],j=i3+1;while(j<N&&items[j][0]>d)j++;var sub=items.slice(i3+1,j);i3=j;
+   if(SKIP[op]||EXPR[op]||op==='OneOfOption')continue;
+   if(COND[op]){var kk=0;while(kk<sub.length&&EXPR[sub[kk][1]])kk++;nodes.push({op:op,cond:renderExpr(sub.slice(0,kk)),children:parse(sub.slice(kk))});continue;}
+   var node=make(op,b);
+   if(sub.length){if(op==='OneOf'){for(var s2=0;s2<sub.length;s2++)if(sub[s2][1]==='OneOfOption')node.opts.push({v:attr(sub[s2][2],'Value',0)||'',t:attr(sub[s2][2],'Option',1)||'',d:sub[s2][2].indexOf(', Default')>=0});}node.children=parse(sub);}
+   nodes.push(node);}
+  return nodes;}
+ var forms={},order=[];
+ function count(ns){var c=ns.length;for(var z=0;z<ns.length;z++)c+=count(ns[z].children||[]);return c;}
+ var i4=0,N4=recs.length;
+ while(i4<N4){if(recs[i4][1]==='Form'){var depth=recs[i4][0],fid=attr(recs[i4][2],'FormId',0)||('f'+i4),title=attr(recs[i4][2],'Title',1)||fid,j4=i4+1;while(j4<N4&&recs[j4][0]>depth)j4++;var block=[];for(var x4=i4+1;x4<j4;x4++)block.push([recs[x4][0]-depth,recs[x4][1],recs[x4][2]]);var nodes=parse(block),c4=count(nodes);if(!(fid in forms)){order.push(fid);forms[fid]={title:title,nodes:nodes,c:c4};}else if(c4>forms[fid].c){forms[fid]={title:title,nodes:nodes,c:c4};}i4=j4;}else i4++;}
+ for(var fk in forms)delete forms[fk].c;
+ var incoming={};
+ function collect(fid,ns){for(var z=0;z<ns.length;z++){var n=ns[z];if(n.ref){(incoming[n.ref]=incoming[n.ref]||[]).push({src:fid,label:n.label||''});}if(n.children)collect(fid,n.children);}}
+ for(var fk2 in forms)collect(fk2,forms[fk2].nodes);
+ for(var t2 in incoming){var seen={},dd=[];incoming[t2].forEach(function(e){var key=e.src+'|'+e.label;if(!seen[key]){seen[key]=1;dd.push(e);}});incoming[t2]=dd;}
+ var titles={};for(var fk3 in forms)titles[fk3]=forms[fk3].title;
+ var nset=0,ncond=0;for(i=0;i<recs.length;i++){if(QLEAF[recs[i][1]])nset++;if(COND[recs[i][1]])ncond++;}
+ return {forms:forms,order:order,incoming:incoming,titles:titles,nset:nset,ncond:ncond,sig:'ifrchg_'+text.length+'_'+order.length+'_'+nset};
+}
+function commit(hl){render(hl);var top=nav[nav.length-1];history.pushState({nav:nav.slice(),hl:hl||null},'','#'+top)}
+function navTo(fid,hl){if(!FORMS[fid])return;nav=[fid];commit(hl||null)}
+function entry(fid){navTo(fid)}
+function push(fid){if(FORMS[fid]){nav.push(fid);commit(null)}}
+function jumpIdx(i){nav=nav.slice(0,i+1);commit(null)}
+function back(){history.back()}
+function goBacklink(src,from){navTo(src,{ref:from})}
+function condRow(n,d){var verb=n.op==='GrayOutIf'?'grayed-out when':(n.op==='DisableIf'?'disabled when':(n.op==='InconsistentIf'||n.op==='NoSubmitIf'||n.op==='WarningIf'?'error when':'hidden when'));var c=n.cond||'(always)';return '<div class="cond depthpad" style="--d:'+d+'">🔒 '+verb+': <b>'+c+'</b></div><div class="cgrp">'+kids(n,d)+'</div>';}
+function rowHTML(n,d){var pad='style="--d:'+d+'"';
+ if(['SuppressIf','GrayOutIf','DisableIf','InconsistentIf','NoSubmitIf','WarningIf'].indexOf(n.op)>=0)return condRow(n,d);
+ if(n.op==='Subtitle')return (n.label?'<div class="sub depthpad" '+pad+'>'+esc(n.label)+'</div>':'')+kids(n,d);
+ if(n.op==='Ref'){var t=TITLES[n.ref],nm=esc(n.label||t||n.ref),click=t?(' onclick="push(\''+n.ref+'\')"'):'';return '<div class="row menu depthpad" data-ref="'+esc(n.ref||'')+'" '+pad+'><div class="l"><div class="nm"'+click+'>'+nm+(t?'':' <span class=meta>(→'+esc(n.ref||'?')+')</span>')+'</div>'+(n.help?'<div class="hp">'+esc(n.help)+'</div>':'')+'</div><div class="rt">'+(t?'submenu':'')+'</div></div>'+kids(n,d);}
+ var rt=ctlHTML(n);
+ var hint=n.hint?'<div class="hint"><code title="click to copy" onclick="copy(this)">'+esc(n.hint)+'</code></div>':'';
+ var meta=n.meta?'<div class="meta">'+esc(n.meta)+'</div>':'';
+ return '<div class="row depthpad" '+pad+' data-t="'+esc(((n.label||'')+' '+(n.help||'')).toLowerCase())+'"><div class="l"><span class="nm">'+esc(n.label)+'</span>'+(n.help?'<div class="hp">'+esc(n.help)+'</div>':'')+meta+hint+'</div><div class="rt">'+rt+'</div></div>'+kids(n,d);}
+function kids(n,d){return (n.children||[]).map(function(c){return rowHTML(c,d+1)}).join('')}
+function ea(s){return esc(s).replace(/"/g,'&quot;');}
+function ctlHTML(n){
+ if(n.off&&(n.op==='OneOf'||n.op==='CheckBox')){
+  var opts=(n.opts&&n.opts.length)?n.opts:(n.op==='CheckBox'?[{v:'0x0',t:'Disabled',d:false},{v:'0x1',t:'Enabled',d:false}]:[]);
+  if(!opts.length)return '';
+  var def='',hasDef=false;opts.forEach(function(o){if(o.d){def=o.v;hasDef=true;}});
+  var s='<select class="ctl" onchange="setOpt(this)" data-k="'+ea(n.vsn+':'+n.off)+'" data-off="'+n.off+'" data-bytes="'+n.bytes+'" data-vsn="'+ea(n.vsn)+'" data-def="'+ea(def)+'" data-label="'+ea(n.label)+'">';
+  if(!hasDef)s+='<option value="">(unchanged)</option>';
+  opts.forEach(function(o){s+='<option value="'+ea(o.v)+'"'+(o.d?' selected':'')+'>'+esc(hx(o.v))+' = '+esc(o.t)+(o.d?' ★':'')+'</option>';});
+  return s+'</select>';
+ }
+ if(n.off&&n.op==='Numeric')
+  return '<input class="ctl num" type="text" spellcheck="false" placeholder="set 0x… / dec" onchange="setOpt(this)" data-k="'+ea(n.vsn+':'+n.off)+'" data-off="'+n.off+'" data-bytes="'+n.bytes+'" data-vsn="'+ea(n.vsn)+'" data-def="" data-label="'+ea(n.label)+'">';
+ return (n.opts||[]).map(function(o){return '<span class="opt'+(o.d?' def':'')+'">'+esc(hx(o.v))+'='+esc(o.t)+(o.d?' ★':'')+'</span>'}).join('');
+}
+function backlinks(fid){var inc=(D.incoming&&D.incoming[fid])||[];if(!inc.length)return '<div class="backlinks"><span class="none">↩ entry point — not referenced by any form</span></div>';var seen={},parts=[];inc.forEach(function(e){if(seen[e.src])return;seen[e.src]=1;var lab=(e.label&&e.label!==TITLES[fid])?(' as "'+esc(e.label)+'"'):'';parts.push('<a onclick="goBacklink(\''+e.src+'\',\''+fid+'\')">'+esc(TITLES[e.src]||e.src)+'</a>'+lab+' <span class="meta">'+e.src+'</span>');});return '<div class="backlinks">↩ referenced by: '+parts.join(' &nbsp;·&nbsp; ')+'</div>';}
+function render(hl){var fid=nav[nav.length-1],f=FORMS[fid];if(!f)return;
+ [].forEach.call(side.children,function(e){e.classList.toggle('act',e.dataset.f===fid)});
+ crumb.innerHTML='<span class="bk" onclick="back()">'+(nav.length>1?'← back':'')+'</span>'+nav.map(function(id,i){return '<a onclick="jumpIdx('+i+')">'+esc(TITLES[id]||id)+'</a>'}).join(' <span style="color:#456">›</span> ');
+ view.innerHTML='<div class="ftitle">'+esc(f.title)+' <span style="color:#456;font-weight:400">'+fid+'</span></div>'+backlinks(fid)+f.nodes.map(function(n){return rowHTML(n,0)}).join('');
+ view.parentElement.scrollTop=0;
+ if(hl){var el=null;if(hl.ref)el=view.querySelector('.row.menu[data-ref="'+hl.ref+'"]');else if(hl.ctl){var cc=view.querySelector('.ctl[data-k="'+hl.ctl+'"]');if(cc){el=cc.closest('.row');try{cc.focus({preventScroll:true});}catch(e){}}}else if(hl.text){var rows=view.querySelectorAll('.row');for(var i=0;i<rows.length;i++)if((rows[i].dataset.t||'').indexOf(hl.text)>=0){el=rows[i];break;}}if(el){el.classList.add('hl');el.scrollIntoView({block:'center'});}}reconcileControls();}
+function copy(el){navigator.clipboard&&navigator.clipboard.writeText(el.textContent);el.style.color='#ffd479';setTimeout(function(){el.style.color=''},400)}
+var CHANGES={};
+function hx(v){v=(''+v).trim();if(!v)return v;if(/^0x/i.test(v))return '0x'+v.slice(2).toUpperCase();var nu=parseInt(v,10);if(isNaN(nu))return v;return '0x'+(nu>>>0).toString(16).toUpperCase();}
+function setOpt(el){var key=el.dataset.k,v=el.value,def=el.dataset.def;var disp=el.tagName==='SELECT'?(el.selectedIndex>=0?el.options[el.selectedIndex].textContent.replace(/ ★$/,''):v):hx(v);var isDef=(v===''||(def!==''&&v===def));if(isDef)delete CHANGES[key];else CHANGES[key]={off:el.dataset.off,bytes:+el.dataset.bytes,vsn:el.dataset.vsn,val:v,label:el.dataset.label,disp:disp,fid:nav[nav.length-1]};var row=el.closest&&el.closest('.row');if(row)row.classList.toggle('changed',!isDef);renderCmds();if(Object.keys(CHANGES).length)document.getElementById('cmds').classList.remove('collapsed');}
+function cmdLines(){return Object.keys(CHANGES).map(function(k){var c=CHANGES[k];return '# '+c.label+': '+c.disp+'\nsetup_var.efi '+c.off+' '+hx(c.val)+' -s 0x'+c.bytes.toString(16)+' -n '+c.vsn;});}
+function cmdText(){return cmdLines().join('\n\n');}
+function renderCmds(){var keys=Object.keys(CHANGES),n=keys.length,box=document.getElementById('cmdbox');box.innerHTML=n?keys.map(function(k){var c=CHANGES[k];return '<div class="citem" data-k="'+ea(k)+'" title="go to this setting"><button class="cdel" title="remove / revert to default">×</button><div class="cl1"># '+esc(c.label)+': '+esc(c.disp)+'</div><div class="cl2">setup_var.efi '+esc(c.off)+' '+esc(hx(c.val))+' -s 0x'+c.bytes.toString(16)+' -n '+esc(c.vsn)+'</div></div>';}).join(''):'<div class="cempty">Change any setting above (dropdown / value) to accumulate commands here…</div>';document.getElementById('cmdcount').textContent=n+' change'+(n===1?'':'s');document.getElementById('cmds').classList.toggle('has',n>0);try{if(D&&D.sig)localStorage.setItem(D.sig,JSON.stringify(CHANGES));}catch(e){}}
+function revertControl(k){var el=view.querySelector('.ctl[data-k="'+k+'"]');if(el){el.value=el.dataset.def||'';var row=el.closest&&el.closest('.row');if(row)row.classList.remove('changed');}}
+function delChange(k){delete CHANGES[k];revertControl(k);renderCmds();}
+function gotoChange(k){var c=CHANGES[k];if(!c)return;navTo((c.fid&&FORMS[c.fid])?c.fid:ORDER[0],{ctl:k});}
+function copyCmds(){var t=cmdText();if(!t)return;if(navigator.clipboard)navigator.clipboard.writeText(t);var c=document.getElementById('cmdcount'),o=c.textContent;c.textContent='copied ✓';setTimeout(function(){c.textContent=o;},900);}
+function dl(blob,name){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},150);}
+function nshBody(){var t=cmdText();return '# Generated by BIOS IFR Browser\n# Run from the UEFI shell (auto-runs as startup.nsh).\n\n'+(t||'# No changes set yet — edit settings in the app to add setup_var.efi lines.')+'\n\n# read System Language and reboot\nsetup_var.efi 0x0 -n PlatformLang -r\n';}
+function saveCmds(){if(!cmdText())return;dl(new Blob([nshBody()],{type:'text/plain'}),'startup.nsh');}
+function clearCmds(){CHANGES={};renderCmds();render(null);}
+// ---- USB bundle: build a .zip (stored method) entirely in-browser, no library ----
+function b64ToU8(b){b=(b||'').replace(/\s/g,'');var bin=atob(b),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+function embTxt(id){var e=document.getElementById(id);return e?e.textContent.replace(/^\s+|\s+$/g,''):'';}
+var _crct;
+function crc32(u8){if(!_crct){_crct=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);_crct[n]=c>>>0;}}var c=0xFFFFFFFF;for(var i=0;i<u8.length;i++)c=_crct[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipStore(files){var enc=new TextEncoder(),local=[],central=[],off=0;
+ function u16(v){return [v&255,(v>>8)&255];} function u32(v){return [v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255];}
+ files.forEach(function(f){var name=enc.encode(f.name),data=f.data,crc=crc32(data),nl=name.length,z=data.length;
+  var lh=[].concat(u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(0),u16(0x21),u32(crc),u32(z),u32(z),u16(nl),u16(0));
+  var lb=new Uint8Array(lh.length+nl+z);lb.set(lh,0);lb.set(name,lh.length);lb.set(data,lh.length+nl);local.push(lb);
+  var ch=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(0),u16(0x21),u32(crc),u32(z),u32(z),u16(nl),u16(0),u16(0),u16(0),u16(0),u32(0),u32(off));
+  var cb=new Uint8Array(ch.length+nl);cb.set(ch,0);cb.set(name,ch.length);central.push(cb);off+=lb.length;});
+ var cdsz=central.reduce(function(a,b){return a+b.length;},0);
+ var eo=[].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cdsz),u32(off),u16(0));
+ return new Blob(local.concat(central,[new Uint8Array(eo)]),{type:'application/zip'});}
+function getBins(){var sh=embTxt('bin-shell'),sv=embTxt('bin-setupvar');
+ if(sh.length>100&&sv.length>100)return Promise.resolve({shell:b64ToU8(sh),setupvar:b64ToU8(sv)});
+ return Promise.all([fetch('assets/BOOTX64.efi').then(function(r){if(!r.ok)throw new Error('shell '+r.status);return r.arrayBuffer();}),
+                     fetch('assets/setup_var.efi').then(function(r){if(!r.ok)throw new Error('setup_var '+r.status);return r.arrayBuffer();})])
+        .then(function(a){return {shell:new Uint8Array(a[0]),setupvar:new Uint8Array(a[1])};});}
+var BUNDLE_README=['BIOS IFR Browser — USB bundle','=============================','','Applies BIOS settings via setup_var.efi from the UEFI shell.','','HOW TO USE','1. Copy ALL files here to the ROOT of a FAT32 USB stick, keeping the layout','   (EFI/BOOT/BOOTX64.EFI must stay at that path).','2. In BIOS: disable Secure Boot and enable USB boot.','3. Boot the stick. The shell auto-runs startup.nsh, applies your settings and','   reboots. REVIEW startup.nsh first.','','!!! WARNING: writing BIOS variables can make a system unstable or UNBOOTABLE.','Understand every command and keep a recovery path (CMOS clear / external SPI','flasher). Provided AS-IS, no warranty. Use at your own risk.','','CONTENTS','  EFI/BOOT/BOOTX64.EFI  UEFI Shell (TianoCore EDK2, built by pbatard)','  setup_var.efi         VarStore editor (datasone)','  startup.nsh           your generated commands','  licenses/, NOTICE.txt attribution + license texts','','App: https://lolwheel.github.io/ifr-browser/'].join('\n');
+var BUNDLE_NOTICE=['THIRD-PARTY COMPONENTS','======================','','Unmodified redistributions, each under its own license (see licenses/).','The BIOS IFR Browser project itself is MIT-licensed.','','1) setup_var.efi  v0.2.2  —  https://github.com/datasone/setup_var.efi','   License: MIT OR Apache-2.0','   Pinned to v0.2.2 — the last release before the v0.3 CLI-syntax change.','   The setup_var.efi commands this tool emits use the v0.2.2 syntax.','   File: setup_var.efi','   SHA-256: 889f772d546debdf0905752327fa333df24dc17966435352ac8bc047a3bc5b92','','2) UEFI Shell (EDK2)  —  https://github.com/pbatard/UEFI-Shell','   License: BSD-2-Clause-Patent','   File: EFI/BOOT/BOOTX64.EFI','   SHA-256: 4ea080ddd576117cd04f5c02d16712ea5d9249c0752214d8e4055e460d7b11e0','','Verify a file:  sha256sum <file>'].join('\n');
+function bundleBlob(){return getBins().then(function(b){var enc=new TextEncoder();return zipStore([
+  {name:'EFI/BOOT/BOOTX64.EFI',data:b.shell},
+  {name:'setup_var.efi',data:b.setupvar},
+  {name:'startup.nsh',data:enc.encode(nshBody())},
+  {name:'README.txt',data:enc.encode(BUNDLE_README)},
+  {name:'NOTICE.txt',data:enc.encode(BUNDLE_NOTICE)},
+  {name:'licenses/setup_var.efi-LICENSE-MIT.txt',data:enc.encode(embTxt('lic-setupvar')||'MIT — see https://github.com/datasone/setup_var.efi')},
+  {name:'licenses/UEFI-Shell-BSD-2-Clause-Patent.txt',data:enc.encode(embTxt('lic-shell')||'BSD-2-Clause-Patent — see https://github.com/pbatard/UEFI-Shell')}
+]);});}
+function downloadBundle(){var c=document.getElementById('cmdcount'),o=c.textContent;c.textContent='zipping…';bundleBlob().then(function(blob){dl(blob,'ifr-usb-bundle.zip');c.textContent='bundle ✓';setTimeout(function(){renderCmds();},1200);}).catch(function(e){c.textContent='bundle failed: '+(e&&e.message||e);setTimeout(function(){renderCmds();},2500);});}
+function reconcileControls(){var els=view.querySelectorAll('.ctl');for(var i=0;i<els.length;i++){var el=els[i],c=CHANGES[el.dataset.k];if(c){el.value=c.val;var row=el.closest&&el.closest('.row');if(row)row.classList.add('changed');}}}
+function buildSidebar(){var roots=ORDER.filter(function(fid){return !(D.incoming[fid]&&D.incoming[fid].length)});side.innerHTML='<div class="sidehdr">'+roots.length+' root forms · others via ► / search</div>'+roots.map(function(fid){return '<div class="sf" data-f="'+fid+'" onclick="entry(\''+fid+'\')" title="'+esc(TITLES[fid])+'">'+esc(TITLES[fid])+' <span style="color:#456">'+fid+'</span></div>'}).join('');}
+function buildIndex(){IDX=[];Object.keys(FORMS).forEach(function(fid){(function rec(ns){ns.forEach(function(n){if(n.op&&n.op!=='Subtitle'&&['SuppressIf','GrayOutIf','DisableIf'].indexOf(n.op)<0&&(n.label||n.hint||(n.opts&&n.opts.length))){var fields=[['name',n.label||n.op]];if(n.help)fields.push(['help',n.help]);(n.opts||[]).forEach(function(o){fields.push(['option',hx(o.v)+' = '+o.t])});if(n.meta)fields.push(['offset',n.meta]);if(n.hint)fields.push(['cmd',n.hint]);IDX.push({f:fid,lbl:n.label||n.op,fields:fields,all:fields.map(function(x){return x[1]}).join('  ').toLowerCase()});}if(n.children)rec(n.children);})})(FORMS[fid].nodes)});}
+function subOK(q,t){var ti=0,n=t.length;for(var qi=0;qi<q.length;qi++){var c=q.charCodeAt(qi);while(ti<n&&t.charCodeAt(ti)!==c)ti++;if(ti>=n)return false;ti++;}return true;}
+function fuzzy(q,t){var ti=0,n=t.length,pos=[],score=0,last=-2,run=0;for(var qi=0;qi<q.length;qi++){var c=q.charCodeAt(qi),f=-1;while(ti<n){if(t.charCodeAt(ti)===c){f=ti;break;}ti++;}if(f<0)return null;pos.push(f);if(f===last+1){run++;score+=8+run*4;}else{run=0;score-=Math.min(f-last-1,6);}var pc=f>0?t.charCodeAt(f-1):32;if(f===0||pc===32||pc===95||pc===45||pc===58||pc===46||pc===47||pc===44)score+=7;last=f;ti=f+1;}return {score:score-n*0.03,pos:pos};}
+function mark(t,pos){if(!pos||!pos.length)return esc(t.slice(0,100));var a=Math.max(0,pos[0]-22),b=Math.min(t.length,pos[pos.length-1]+26),set={},i;for(i=0;i<pos.length;i++)set[pos[i]]=1;var out=(a>0?'…':'');for(i=a;i<b;i++)out+=set[i]?('<mark>'+esc(t.charAt(i))+'</mark>'):esc(t.charAt(i));return out+(b<t.length?'…':'');}
+function fromHash(){var f=(location.hash||'').replace(/^#/,'');return FORMS[f]?f:null;}
+var tmr;
+sb.addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(function(){
+ var q=sb.value.trim().toLowerCase().replace(/\s+/g,'');if(!q){res.style.display='none';return;}
+ var h=[];
+ for(var i=0;i<IDX.length;i++){var e=IDX[i];if(!subOK(q,e.all))continue;
+  var best=null;
+  for(var k=0;k<e.fields.length;k++){var r=fuzzy(q,e.fields[k][1].toLowerCase());if(r&&(!best||r.score>best.r.score))best={fld:e.fields[k],r:r};}
+  if(!best){var ra=fuzzy(q,e.all);if(ra)best={fld:['match',e.all],r:ra};}
+  if(best){best.e=e;h.push(best);}
+ }
+ h.sort(function(p,qq){return qq.r.score-p.r.score;});
+ if(h.length>250)h=h.slice(0,250);
+ res.innerHTML=h.length?h.map(function(o){var e=o.e,fld=o.fld,where=fld[0];
+  var nm=(where==='name')?mark(e.lbl,o.r.pos):esc(e.lbl);
+  var tag=(where!=='name')?' <span class="tag">'+where+'</span>':'';
+  var ctx=(where!=='name')?'<div class="h">'+(where==='match'?'':'<span class="cl">'+where+':</span> ')+mark(fld[1],o.r.pos)+'</div>':'';
+  return '<div class="r" onclick="navTo(\''+e.f+'\',{text:\''+(e.lbl||'').toLowerCase().replace(/[\\\'"]/g,'')+'\'});document.getElementById(\'results\').style.display=\'none\'"><span class="f">'+esc(TITLES[e.f])+'</span> › '+nm+tag+ctx+'</div>';
+ }).join(''):'<div class="r">no matches</div>';
+ res.style.display='block';},120);});
+document.addEventListener('click',function(e){if(!e.target.closest('.sbox'))res.style.display='none'});
+document.getElementById('cmdbox').addEventListener('click',function(e){var item=e.target.closest('.citem');if(!item)return;var k=item.dataset.k;if(e.target.closest('.cdel'))delChange(k);else gotoChange(k);});
+window.addEventListener('popstate',function(e){if(!ORDER.length)return;if(e.state&&e.state.nav){nav=e.state.nav.slice();render(e.state.hl||null);}else{var f=fromHash()||ORDER[0];nav=[f];render(null);}});
+window.addEventListener('hashchange',function(){if(!ORDER.length)return;var f=fromHash();if(f&&f!==nav[nav.length-1]){nav=[f];history.replaceState({nav:nav.slice(),hl:null},'','#'+f);render(null);}});
+function load(text){try{var t0=(window.performance&&performance.now)?performance.now():0;D=buildData(text);FORMS=D.forms;ORDER=D.order;TITLES=D.titles;if(!ORDER.length){view.innerHTML='<div class="empty">No forms found — is this an IFR text dump?</div>';stats.textContent='0 forms';return;}var ms=t0?Math.round(performance.now()-t0):0;var sn=SRC?(SRC.length>32?SRC.slice(0,30)+'…':SRC):'';stats.textContent=(sn?sn+' · ':'')+ORDER.length+' forms · '+D.nset+' settings · '+D.ncond+' conditions'+(ms?(' · '+ms+'ms'):'');stats.title=SRC||'';buildSidebar();buildIndex();try{CHANGES=JSON.parse(localStorage.getItem(D.sig)||'{}')||{};}catch(e){CHANGES={};}var nch=Object.keys(CHANGES).length;if(nch)stats.textContent+=' · restored '+nch+' edit'+(nch===1?'':'s');var f=fromHash()||ORDER[0];nav=[f];history.replaceState({nav:[f],hl:null},'','#'+f);render(null);renderCmds();}catch(err){view.innerHTML='<div class="empty">Parse error: '+esc(String(err&&err.stack||err))+'</div>';}}
+var SRC='';
+function idbOpen(cb){try{var rq=indexedDB.open('ifrbrowser',1);rq.onupgradeneeded=function(){try{rq.result.createObjectStore('kv');}catch(e){}};rq.onsuccess=function(){cb(rq.result);};rq.onerror=function(){cb(null);};}catch(e){cb(null);}}
+function idbSet(k,v){idbOpen(function(db){if(!db)return;try{db.transaction('kv','readwrite').objectStore('kv').put(v,k);}catch(e){}});}
+function idbGet(k,cb){idbOpen(function(db){if(!db){cb(null);return;}try{var rq=db.transaction('kv','readonly').objectStore('kv').get(k);rq.onsuccess=function(){cb(rq.result||null);};rq.onerror=function(){cb(null);};}catch(e){cb(null);}});}
+function idbDel(k){idbOpen(function(db){if(!db)return;try{db.transaction('kv','readwrite').objectStore('kv')['delete'](k);}catch(e){}});}
+function clearSaved(){idbDel('ifr');idbDel('ifrname');location.reload();}
+function readFile(file){SRC=file.name;stats.textContent='parsing '+file.name+'…';var r=new FileReader();r.onload=function(){load(r.result);idbSet('ifr',r.result);idbSet('ifrname',file.name);var fb=document.getElementById('forget');if(fb)fb.style.display='';};r.readAsText(file);}
+document.getElementById('file').addEventListener('change',function(e){if(e.target.files&&e.target.files[0])readFile(e.target.files[0]);});
+window.addEventListener('dragover',function(e){e.preventDefault();document.body.classList.add('drag');});
+window.addEventListener('dragleave',function(e){if(e.relatedTarget===null||(e.clientX<=0&&e.clientY<=0))document.body.classList.remove('drag');});
+window.addEventListener('drop',function(e){e.preventDefault();document.body.classList.remove('drag');if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0])readFile(e.dataTransfer.files[0]);});
+function showPrompt(){stats.textContent='no dump loaded';view.innerHTML='<div class="empty">Drop a <b>.ifr.txt</b> dump here, or click <b>Load .ifr.txt</b> above.<br><br><span style="font-size:12px;color:#5d6f99">Everything runs in your browser — nothing is uploaded. Your dump &amp; edits are saved locally and reload automatically next time.</span></div>';}
+(function(){var raw=document.getElementById('ifr').textContent;if(raw&&raw.replace(/\s/g,'').length>40){load(raw);return;}showPrompt();idbGet('ifr',function(saved){if(saved){idbGet('ifrname',function(nm){SRC=nm||'saved dump';load(saved);var fb=document.getElementById('forget');if(fb)fb.style.display='';});}});})();
+</script></body></html>
