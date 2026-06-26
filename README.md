@@ -4,6 +4,13 @@ A single-file, offline web app for exploring and editing **AMI Aptio UEFI Setup*
 
 **[▶ Open the app](https://lolwheel.github.io/ifr-browser/)** · drag a `.ifr.txt` dump onto the page.
 
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshot-browse.png"><img src="docs/screenshot-browse.png" alt="Browsing BIOS-style form screens with resolved conditions and fuzzy search"></a><br><sub><b>Browse &amp; search</b> — BIOS-style form screens, resolved <code>SuppressIf</code>/<code>GrayOutIf</code> conditions, and fuzzy search across names, help and options.</sub></td>
+<td width="50%" valign="top"><a href="docs/screenshot-edit.png"><img src="docs/screenshot-edit.png" alt="Editing settings with the live startup.nsh command panel"></a><br><sub><b>Edit &amp; export</b> — change any dropdown/value and the exact <code>setup_var.efi</code> lines accumulate in a panel you can copy, save as <code>startup.nsh</code>, or download as a ready-to-boot USB <code>.zip</code>.</sub></td>
+</tr>
+</table>
+
 Everything runs **entirely in your browser** — your dump is parsed in JavaScript and never leaves your machine. The loaded dump and your pending edits are saved locally (IndexedDB + localStorage) and auto-reload on your next visit.
 
 ## Why
