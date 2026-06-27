@@ -1,0 +1,103 @@
+name: build-deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create releases on tags
+  pages: write      # deploy to GitHub Pages
+  id-token: write   # OIDC for deploy-pages
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.74
+
+      - name: Set up Rust (wasm32)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: |
+          curl -sSfL https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz \
+            | tar -xz -C "$HOME/.cargo/bin" --strip-components=1 --wildcards '*/wasm-pack'
+
+      - name: Build raw-BIOS-to-IFR pipeline
+        run: bash tools/bios2ifr/build.sh "$GITHUB_WORKSPACE/dist"
+
+      - name: Assemble Pages site
+        run: |
+          mkdir -p site
+          cp dist/index.html site/                 # unified app, pipeline WASM embedded
+          cp dist/bios2ifr.html site/              # standalone extractor
+          cp dist/ifr-browser-offline.html site/   # fully-offline single file (also downloadable)
+          cp -r assets site/
+          [ -d docs ] && cp -r docs site/ || true
+
+      - name: Sanity-check artifacts
+        run: |
+          test -s dist/index.html
+          test -s dist/bios2ifr.html
+          test -s dist/ifr-browser-offline.html
+          test -s dist/decomp.mjs
+          test -s dist/ifr-web/ifrextractor_bg.wasm
+          grep -q __DECOMP_MJS_B64__ dist/index.html && { echo "placeholder not filled"; exit 1; } || true
+          grep -q 'id="bin-shell">[A-Za-z0-9]' dist/ifr-browser-offline.html || { echo "offline binaries not embedded"; exit 1; }
+          echo "site contents:" && ls -l site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bios2ifr
+          path: |
+            dist/ifr-browser-offline.html
+            dist/bios2ifr.html
+            dist/decomp.mjs
+            dist/ifr-web
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: bios2ifr
+          path: dist
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/ifr-browser-offline.html
+            dist/bios2ifr.html
+          generate_release_notes: true

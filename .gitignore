@@ -1,3 +1,20 @@
 .DS_Store
 Thumbs.db
+
+# personal firmware images / extracted dumps — never commit
 *.ifr.txt
+*.bin
+*.rom
+*.fd
+*.fv
+*.cap
+
+# build outputs (reproducible via tools/bios2ifr/build.sh)
+/dist/
+tools/bios2ifr/dist/
+
+# rust / wasm-pack / node build dirs
+target/
+**/target/
+pkg/
+node_modules/

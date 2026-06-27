@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><title>BIOS IFR Browser</title>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BIOS Hidden Options Editor</title>
 <style>
 :root{--bg:#0a1530;--bar:#13284f;--fg:#cfe0ff;--mut:#7e93bf;--acc:#7ab8ff;--gold:#ffd479;--line:#1d3461;--rowh:#15315f}
 *{box-sizing:border-box}html,body{margin:0;height:100%}
@@ -40,6 +40,36 @@ header b{color:var(--gold);flex:none}
 .cond b{color:#e6c8ff;font-weight:600}
 .cond a.cref{color:#bfe0ff;cursor:pointer;border-bottom:1px dotted #5a7db0}
 .cond a.cref:hover{color:#fff;border-bottom-color:#bfe0ff;background:#1c3a66}
+.cond .qref{color:#9fb4dc;border-bottom:1px dotted #44597f}.cond .qref .ty{color:#6f84ad;font-size:10px}
+.infer{display:none;color:#7fd6a6;font-style:italic}body.show-infer .infer{display:inline}
+#infertgl{display:none;align-items:center;gap:5px}#infertgl input{margin:0}
+.cond .qx{border-radius:3px;padding:0 1px;cursor:pointer}.cond .qx:hover{background:#22190a}
+.cond .qx .ovh{color:var(--gold);background:rgba(255,212,121,.16);border:1px solid rgba(255,212,121,.40);font-size:9.5px;font-weight:700;margin-left:3px;opacity:.72;border-radius:8px;padding:0 4px;cursor:pointer;vertical-align:1px}
+.cond .qx:hover .ovh{opacity:1;background:rgba(255,212,121,.34)}
+.cond .qx.ov{background:#3a2a12;outline:1px solid #7a5a1e}.cond .qx.ov .ovh{opacity:1}
+#ovpop{position:absolute;z-index:60;background:#0c1832;border:1px solid var(--gold);border-radius:7px;padding:9px 10px;display:none;box-shadow:0 6px 22px #000a;font-size:12px;color:var(--fg)}
+#ovpop .t{color:var(--mut);margin-bottom:6px;max-width:240px}#ovpop b{color:var(--gold)}
+#ovpop input{width:120px;background:#06102a;border:1px solid var(--line);color:var(--fg);border-radius:5px;padding:4px 6px;font:inherit}#ovpop .b{margin-top:8px;display:flex;gap:6px}#ovpop .btn{padding:4px 9px}
+.subt{color:var(--mut);font-weight:normal;font-size:11px;flex:none}
+@media(max-width:760px){.subt{display:none}}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(122,184,255,.25);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-1px;margin-right:6px}
+.spin.big{width:26px;height:26px;border-width:3px;margin:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.land{max-width:680px;margin:6vh auto 0;text-align:center}
+.land .big{font-size:20px;color:var(--fg);font-weight:600}.land .big b{color:var(--gold)}
+.land .sub{margin-top:10px;color:#a9bce0;font-size:13.5px;line-height:1.6}.land .sub b{color:var(--fg)}
+.land .steps{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:20px 0 4px}
+.land .steps span{flex:1 1 180px;max-width:210px;background:#0c1832;border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:#b8c8ea;font-size:12.5px;text-align:left}
+.land .steps b{display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;background:var(--acc);color:#06102a;border-radius:50%;font-size:11px;margin-right:6px}
+.land .note{margin-top:16px;color:var(--mut);font-size:12px;line-height:1.6}.land .note b{color:#bfe0ff}
+.land .note.tiny{font-size:11px;margin-top:10px}.land code{background:#0c1832;border:1px solid var(--line);border-radius:3px;padding:0 4px}
+.presets{padding:8px 10px}.presets .pl{color:var(--mut);font-size:11px;margin-right:4px}
+.chip{display:inline-block;background:#10254d;border:1px solid var(--line);color:var(--acc);border-radius:13px;padding:3px 10px;margin:3px 4px 3px 0;cursor:pointer;font-size:12px}
+.chip:hover{background:#17386e;color:#fff}
+#logmodal{position:fixed;inset:0;background:#000a;display:none;z-index:90;align-items:center;justify-content:center;padding:20px}
+#logmodal .box{background:#0c1832;border:1px solid var(--line);border-radius:10px;max-width:760px;width:100%;max-height:82vh;display:flex;flex-direction:column;padding:14px}
+#logmodal .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}#logmodal .hd b{color:var(--gold)}
+#logmodal pre{white-space:pre-wrap;word-break:break-word;overflow:auto;background:#06102a;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12px;flex:1;margin:0}
 .cgrp{border-left:1px dashed #2a2350;margin-left:6px;padding-left:6px}
 .depthpad{padding-left:calc(var(--d,0)*14px)}
 #results{position:absolute;left:0;right:0;top:100%;background:#0c1832;border:1px solid var(--line);max-height:60vh;overflow:auto;display:none;z-index:20}
@@ -70,10 +100,12 @@ input.ctl.num{width:140px}
 .cempty{color:var(--mut);padding:16px;text-align:center}
 .btn.sm{padding:3px 8px;font-size:11px}
 </style></head><body>
-<header><b>BIOS IFR Browser</b> <span id="stats" style="color:var(--mut)">loading…</span>
-<label class="btn">Load .ifr.txt<input id="file" type="file" accept=".txt,.ifr" style="display:none"></label>
+<header><b>BIOS Hidden Options Editor</b><span class="subt">unlock &amp; edit hidden UEFI&nbsp;Setup options</span> <span id="stats" style="color:var(--mut)">loading…</span>
+<label class="btn">Load BIOS<input id="file" type="file" accept=".bin,.rom,.fd,.fv,.cap,.txt,.ifr" style="display:none" title="a raw BIOS / SPI flash image (or a .ifr.txt dump)"></label>
 <button class="btn" id="forget" style="display:none" onclick="clearSaved()" title="Remove the saved dump from this browser">forget</button>
-<div class="sbox"><input id="search" placeholder="search settings, help, options, offsets… (tdc, 0x191, turbo performance)"><div id="results"></div></div>
+<button class="btn" id="logbtn" style="display:none" onclick="showLog()" title="Extraction diagnostics — include this when reporting a problem">log</button>
+<label class="btn" id="infertgl" title="Infer names for unnamed control questions from other BIOS modules — heuristic, matched by VarStore GUID + offset"><input type="checkbox" id="inferck">infer names</label>
+<div class="sbox"><input id="search" placeholder="search hidden settings — CFG Lock, overclock, undervolt, 0x191…"><div id="results"></div></div>
 </header>
 <div id="main"><div id="side"></div><div id="view"><div id="crumb"></div><div id="form" class="form"><div class="empty">loading…</div></div></div></div>
 <div id="cmds" class="cmds">
@@ -160,6 +192,69 @@ POSSIBILITY OF SUCH DAMAGE.
 <script type="text/plain" id="bin-setupvar"></script>
 <script type="text/plain" id="bin-shell"></script>
 <script type="text/plain" id="ifr"></script>
+<script type="module">
+/* Raw-BIOS → IFR pipeline, embedded at build time (UEFITool decompressors +
+   IFRExtractor-RS, both WASM, + the JS firmware-volume walker). If the build
+   placeholders were not filled, this no-ops and the app stays text-only. */
+window.__biosReady = (async function(){
+  var D="__DECOMP_MJS_B64__", J="__IFR_JS_B64__", W="__IFR_WASM_B64__", F="__FFS_B64__";
+  if(D.lastIndexOf("__DECOMP",0)===0){ window.__biosDisabled=true; return false; }
+  function u8(s){var r=atob(s),a=new Uint8Array(r.length);for(var i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a;}
+  await import("data:text/javascript;base64,"+F);                       // sets globalThis.FFS
+  var decompMod=await import("data:text/javascript;base64,"+D);
+  var ifrMod=await import("data:text/javascript;base64,"+J);
+  await ifrMod.default({module_or_path:u8(W)});
+  var mod=await decompMod.default();
+  function cp(a){var p=mod._malloc(a.length||1);mod.HEAPU8.set(a,p);return p;}
+  function lzma(a){var sp=cp(a),zp=mod._malloc(4);var st=mod._wrap_lzma_get_size(sp,a.length,zp);if(st!==0){mod._free(sp);mod._free(zp);return{status:st,data:null};}var n=mod.getValue(zp,'i32')>>>0,dp=mod._malloc(n||1);st=mod._wrap_lzma_decode(sp,a.length,dp);var d=mod.HEAPU8.slice(dp,dp+n);mod._free(sp);mod._free(zp);mod._free(dp);return{status:st,data:d};}
+  function efi(a){var sp=cp(a),dsP=mod._malloc(4),ssP=mod._malloc(4);var st=mod._wrap_tiano_get_size(sp,a.length,dsP,ssP);if(st!==0){mod._free(sp);mod._free(dsP);mod._free(ssP);return{status:st,data:null};}var n=mod.getValue(dsP,'i32')>>>0,dp=mod._malloc(n||1);var r=mod._wrap_efi_decode(sp,a.length,dp,n,0);if(r!==0)r=mod._wrap_efi_decode(sp,a.length,dp,n,1);var d=mod.HEAPU8.slice(dp,dp+n);mod._free(sp);mod._free(dsP);mod._free(ssP);mod._free(dp);return{status:r,data:d};}
+  var decoder={lzma:lzma,efi:efi};
+  // VarStores whose GUID is too generic to match names by offset (EFI global var store).
+  var GENERIC={"8BE4DF61-93CA-11D2-AA0D-00E098032B8C":1};
+  function pickSetupText(o){var parts=o.split(/^@@@IFR-SEGMENT (.+) @@@\n/m);for(var k=1;k+1<parts.length;k+=2){if(/en-US\.uefi$/.test(parts[k]))return parts[k+1];}return parts[2]||o;}
+  // Layer 2: from EVERY module's IFR, map (VarStore GUID : offset) -> name, keeping
+  // only keys with a single consistent name. Used to *infer* names for the Setup module's
+  // nameless control questions. Heuristic — surfaced as such in the UI.
+  function buildInferMap(modules){
+    var acc={};
+    var VS=/VarStore Guid: ([0-9A-Fa-f-]+), VarStoreId: (0x[0-9A-Fa-f]+), Size: 0x[0-9A-Fa-f]+, Name: "([^"]*)"/g;
+    var QD=/(?:OneOf|Numeric|CheckBox|OrderedList|Password|String|Date|Time|Action) Prompt: "([^"]*)"[^\n]*?QuestionId: 0x[0-9A-Fa-f]+, VarStoreId: (0x[0-9A-Fa-f]+), VarOffset: (0x[0-9A-Fa-f]+)/g;
+    for(var i=0;i<modules.length;i++){
+      var o=ifrMod.extract(modules[i].data,false);
+      if(o.indexOf("@@@IFR-SEGMENT")===-1)continue;
+      var vsg={},m;VS.lastIndex=0;while((m=VS.exec(o)))vsg[m[2].toUpperCase()]=m[1].toUpperCase();
+      QD.lastIndex=0;while((m=QD.exec(o))){var nm=m[1];if(!nm||nm==="N/A")continue;var g=vsg[m[2].toUpperCase()];if(!g||GENERIC[g])continue;var key=g+":"+m[3].toUpperCase();(acc[key]=acc[key]||{})[nm]=1;}
+    }
+    var out={};for(var k in acc){var names=Object.keys(acc[k]);if(names.length===1)out[k]=names[0];}
+    return out;
+  }
+  function tick(){return new Promise(function(r){setTimeout(r,16);});}
+  function nowms(){return (typeof performance!=='undefined'&&performance.now)?performance.now():0;}
+  function finishLog(lines,t0){return lines.concat(['elapsed: '+Math.round(nowms()-t0)+' ms','engine: IFRExtractor-RS 1.6.1 + UEFITool LZMA/Tiano (WASM)','agent: '+navigator.userAgent]).join('\n');}
+  window.biosToIfr=async function(image,onp){
+    var t0=nowms();
+    var log=['BIOS Hidden Options Editor — extraction log','image: '+image.length+' bytes ('+(image.length/1048576).toFixed(1)+' MB)'];
+    onp&&onp('Scanning firmware volumes & decompressing…');await tick();
+    var res=self.FFS.findSetup(image,decoder);
+    log.push('firmware modules (PE32) found: '+res.all.length);
+    log.push('Setup-module candidates: '+res.setup.length+(res.setup.length?(' ('+res.setup.map(function(m){return m.data.length+'B';}).join(', ')+')'):''));
+    if(res.errors&&res.errors.length)log.push('decompress errors ('+res.errors.length+'): '+res.errors.slice(0,12).join(' | '));
+    if(res.skipped&&res.skipped.length){var uq=res.skipped.filter(function(v,i,a){return a.indexOf(v)===i;});log.push('skipped/unsupported sections ('+res.skipped.length+'): '+uq.slice(0,12).join(' | '));}
+    onp&&onp('Extracting Setup options…');await tick();
+    var cands=res.setup.length?res.setup:res.all,text=null,chosen=null;
+    for(var c=0;c<cands.length&&!text;c++){var o=ifrMod.extract(cands[c].data,true);if(o.indexOf("@@@IFR-SEGMENT")!==-1){text=pickSetupText(o);chosen=cands[c];}}
+    if(!text){log.push('RESULT: no UEFI Setup form data found in any module');window.__exlog=finishLog(log,t0);var e=new Error('No editable BIOS settings (UEFI Setup) were found in this image. It may not be an AMI/Aptio BIOS, or the dump may be incomplete.');e.exlog=window.__exlog;throw e;}
+    log.push('chosen Setup module: '+(chosen.name||'(unnamed)')+', '+chosen.data.length+' bytes');
+    onp&&onp('Resolving names from other modules…');await tick();
+    var infer=buildInferMap(res.all);
+    log.push('inferred names from other modules: '+Object.keys(infer).length);
+    log.push('RESULT: success — '+(text.match(/^0x/gm)||[]).length+' opcode lines');
+    window.__exlog=finishLog(log,t0);
+    return {text:text, infer:infer, log:window.__exlog};
+  };
+  return true;
+})();
+</script>
 <script>
 var esc=function(s){return (s==null?'':String(s)).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
 var D={},FORMS={},ORDER=[],TITLES={},IDX=[],nav=[];
@@ -171,15 +266,22 @@ var EXPR={},COND={},SKIP={},QLEAF={},SYM={Equal:'==',NotEqual:'!=',LessThan:'&lt
 'OneOf Numeric CheckBox Text OrderedList Date Time Password String Action'.split(' ').forEach(function(x){QLEAF[x]=1});
 var _rc={};
 function attr(s,k,quoted){var key=k+(quoted?'"':'#');var re=_rc[key];if(!re){re=_rc[key]=quoted?new RegExp(k+': "([^"]*)"'):new RegExp(k+': (0x[0-9A-Fa-f]+|\\d+)');}var m=re.exec(s);return m?m[1]:null;}
-function buildData(text){
+function buildData(text,infer){
+ var INFER=infer||null;
  var LINE=/^0x[0-9A-Fa-f]+:[ ]?(\t*)(.*)$/, recs=[], arr=text.split(/\r?\n/);
  for(var li=0;li<arr.length;li++){var m=LINE.exec(arr[li]);if(!m)continue;var body=m[2].replace(/\s+$/,'');if(!body)continue;recs.push([m[1].length,body.split(' ',1)[0].replace(/:$/,''),body]);}
- var vs={};
- for(var i=0;i<recs.length;i++)if(recs[i][1]==='VarStore'){var mm=recs[i][2].match(/VarStoreId: (0x[0-9A-Fa-f]+), Size: 0x[0-9A-Fa-f]+, Name: "([^"]+)"/);if(mm)vs[parseInt(mm[1],16)]=mm[2];}
+ var vs={},vsg={};
+ for(var i=0;i<recs.length;i++)if(recs[i][1]==='VarStore'){var mm=recs[i][2].match(/VarStore Guid: ([0-9A-Fa-f-]+), VarStoreId: (0x[0-9A-Fa-f]+), Size: 0x[0-9A-Fa-f]+, Name: "([^"]*)"/);if(mm){vs[parseInt(mm[2],16)]=mm[3];vsg[parseInt(mm[2],16)]=mm[1].toUpperCase();}}
  var qmap={},qform={},cf=null;
- for(i=0;i<recs.length;i++){var b=recs[i][2];if(recs[i][1]==='Form')cf=attr(b,'FormId',0);var qid=attr(b,'QuestionId',0);if(qid){var k=parseInt(qid,16),nm=attr(b,'Prompt',1);if(!(k in qmap)||nm)qmap[k]={nm:nm,vs:attr(b,'VarStoreId',0),off:attr(b,'VarOffset',0)};if(nm&&cf&&!(k in qform))qform[k]=cf;}}
+ for(i=0;i<recs.length;i++){var oc=recs[i][1],b=recs[i][2];if(oc==='Form'){cf=attr(b,'FormId',0);continue;}if(!QLEAF[oc])continue;var qid=attr(b,'QuestionId',0);if(qid){var k=parseInt(qid,16),nm=attr(b,'Prompt',1);if(!(k in qmap)||nm)qmap[k]={nm:nm,vs:attr(b,'VarStoreId',0),off:attr(b,'VarOffset',0),sz:attr(b,'Size',0)};if(nm&&cf&&!(k in qform))qform[k]=cf;}}
  function vhint(b){var vsid=attr(b,'VarStoreId',0),off=attr(b,'VarOffset',0),sz=attr(b,'Size',0);if(!(vsid&&off&&sz))return '';var nb=Math.max(1,(parseInt(sz)/8)|0);return 'setup_var.efi '+off+' <val> -s 0x'+nb.toString(16).toUpperCase()+' -n '+(vs[parseInt(vsid,16)]||('VS'+vsid));}
- function qlink(qid){if(!qid)return '?';var e=qmap[parseInt(qid,16)];if(e&&e.nm){var loc=(e.vs&&e.off)?(' @'+(vs[parseInt(e.vs,16)]||e.vs)+':'+e.off):'';var disp=esc(e.nm)+esc(loc);var fid=qform[parseInt(qid,16)];if(fid){var tn=e.nm.toLowerCase().replace(/['"]/g,'');return '<a class="cref" onclick="navTo(\''+fid+'\',{text:\''+tn+'\'})">'+disp+'</a>';}return disp;}return 'Q'+esc(qid);}
+ function qlink(qid){if(!qid)return '?';var e=qmap[parseInt(qid,16)];if(!e)return 'Q'+esc(qid);var canov=!!(e.vs&&e.off),inner;
+  if(e.nm){var loc=canov?(' @'+(vs[parseInt(e.vs,16)]||e.vs)+':'+e.off):'';var disp=esc(e.nm)+esc(loc);var fid=qform[parseInt(qid,16)];if(fid){var tn=e.nm.toLowerCase().replace(/['"]/g,'');inner='<a class="cref" onclick="navTo(\''+fid+'\',{text:\''+tn+'\'})">'+disp+'</a>';}else inner=disp;}
+  else if(canov){var vn=esc(vs[parseInt(e.vs,16)]||('VS'+e.vs)),ty=({8:'u8',16:'u16',32:'u32',64:'u64'})[parseInt(e.sz)]||'';var inf='';if(INFER){var gd=vsg[parseInt(e.vs,16)];if(gd){var nm2=INFER[gd+':'+e.off.toUpperCase()];if(nm2)inf='<span class="infer"> · '+esc(nm2)+'</span>';}}inner='<span class="qref" title="QuestionId '+esc(qid)+' — unnamed control question">'+vn+':'+esc(e.off)+(ty?'<span class="ty"> '+ty+'</span>':'')+'</span>'+inf;}
+  else return 'Q'+esc(qid);
+  if(!canov)return inner;
+  var vnme=vs[parseInt(e.vs,16)]||('VS'+e.vs),bytes=e.sz?Math.max(1,(parseInt(e.sz)/8)|0):1,lab=e.nm||(INFER&&vsg[parseInt(e.vs,16)]&&INFER[vsg[parseInt(e.vs,16)]+':'+e.off.toUpperCase()])||(vnme+':'+e.off);
+  return '<span class="qx" data-k="'+ea(vnme+':'+e.off)+'" data-off="'+ea(e.off)+'" data-vsn="'+ea(vnme)+'" data-bytes="'+bytes+'" data-q="'+ea(qid)+'" data-label="'+ea(lab)+'">'+inner+'<span class="ovh" title="override this target’s value">⊕</span></span>';}
  function renderExpr(ex){var st=[];for(var i2=0;i2<ex.length;i2++){var op=ex[i2][1],b=ex[i2][2];
   if(op==='EqIdVal')st.push(qlink(attr(b,'QuestionId',0))+' == '+esc(attr(b,'Value',0)));
   else if(op==='EqIdValList')st.push(qlink(attr(b,'QuestionId',0))+' &isin; {list}');
@@ -251,20 +353,20 @@ function render(hl){var fid=nav[nav.length-1],f=FORMS[fid];if(!f)return;
  crumb.innerHTML='<span class="bk" onclick="back()">'+(nav.length>1?'← back':'')+'</span>'+nav.map(function(id,i){return '<a onclick="jumpIdx('+i+')">'+esc(TITLES[id]||id)+'</a>'}).join(' <span style="color:#456">›</span> ');
  view.innerHTML='<div class="ftitle">'+esc(f.title)+' <span style="color:#456;font-weight:400">'+fid+'</span></div>'+backlinks(fid)+f.nodes.map(function(n){return rowHTML(n,0)}).join('');
  view.parentElement.scrollTop=0;
- if(hl){var el=null;if(hl.ref)el=view.querySelector('.row.menu[data-ref="'+hl.ref+'"]');else if(hl.ctl){var cc=view.querySelector('.ctl[data-k="'+hl.ctl+'"]');if(cc){el=cc.closest('.row');try{cc.focus({preventScroll:true});}catch(e){}}}else if(hl.text){var rows=view.querySelectorAll('.row');for(var i=0;i<rows.length;i++)if((rows[i].dataset.t||'').indexOf(hl.text)>=0){el=rows[i];break;}}if(el){el.classList.add('hl');el.scrollIntoView({block:'center'});}}reconcileControls();}
+ if(hl){var el=null;if(hl.ref)el=view.querySelector('.row.menu[data-ref="'+hl.ref+'"]');else if(hl.ctl){var cc=view.querySelector('.ctl[data-k="'+hl.ctl+'"]');if(cc){el=cc.closest('.row');try{cc.focus({preventScroll:true});}catch(e){}}}else if(hl.text){var rows=view.querySelectorAll('.row');for(var i=0;i<rows.length;i++)if((rows[i].dataset.t||'').indexOf(hl.text)>=0){el=rows[i];break;}}if(el){el.classList.add('hl');el.scrollIntoView({block:'center'});}}reconcileControls();reconcileRefs();}
 function copy(el){navigator.clipboard&&navigator.clipboard.writeText(el.textContent);el.style.color='#ffd479';setTimeout(function(){el.style.color=''},400)}
 var CHANGES={};
 function hx(v){v=(''+v).trim();if(!v)return v;if(/^0x/i.test(v))return '0x'+v.slice(2).toUpperCase();var nu=parseInt(v,10);if(isNaN(nu))return v;return '0x'+(nu>>>0).toString(16).toUpperCase();}
-function setOpt(el){var key=el.dataset.k,v=el.value,def=el.dataset.def;var disp=el.tagName==='SELECT'?(el.selectedIndex>=0?el.options[el.selectedIndex].textContent.replace(/ ★$/,''):v):hx(v);var isDef=(v===''||(def!==''&&v===def));if(isDef)delete CHANGES[key];else CHANGES[key]={off:el.dataset.off,bytes:+el.dataset.bytes,vsn:el.dataset.vsn,val:v,label:el.dataset.label,disp:disp,fid:nav[nav.length-1]};var row=el.closest&&el.closest('.row');if(row)row.classList.toggle('changed',!isDef);renderCmds();if(Object.keys(CHANGES).length)document.getElementById('cmds').classList.remove('collapsed');}
+function setOpt(el){var key=el.dataset.k,v=el.value,def=el.dataset.def;var disp=el.tagName==='SELECT'?(el.selectedIndex>=0?el.options[el.selectedIndex].textContent.replace(/ ★$/,''):v):hx(v);var isDef=(v===''||(def!==''&&v===def));if(isDef)delete CHANGES[key];else CHANGES[key]={off:el.dataset.off,bytes:+el.dataset.bytes,vsn:el.dataset.vsn,val:v,label:el.dataset.label,disp:disp,fid:nav[nav.length-1]};var row=el.closest&&el.closest('.row');if(row)row.classList.toggle('changed',!isDef);renderCmds();reconcileRefs();if(Object.keys(CHANGES).length)document.getElementById('cmds').classList.remove('collapsed');}
 function cmdLines(){return Object.keys(CHANGES).map(function(k){var c=CHANGES[k];return '# '+c.label+': '+c.disp+'\nsetup_var.efi '+c.off+' '+hx(c.val)+' -s 0x'+c.bytes.toString(16)+' -n '+c.vsn;});}
 function cmdText(){return cmdLines().join('\n\n');}
 function renderCmds(){var keys=Object.keys(CHANGES),n=keys.length,box=document.getElementById('cmdbox');box.innerHTML=n?keys.map(function(k){var c=CHANGES[k];return '<div class="citem" data-k="'+ea(k)+'" title="go to this setting"><button class="cdel" title="remove / revert to default">×</button><div class="cl1"># '+esc(c.label)+': '+esc(c.disp)+'</div><div class="cl2">setup_var.efi '+esc(c.off)+' '+esc(hx(c.val))+' -s 0x'+c.bytes.toString(16)+' -n '+esc(c.vsn)+'</div></div>';}).join(''):'<div class="cempty">Change any setting above (dropdown / value) to accumulate commands here…</div>';document.getElementById('cmdcount').textContent=n+' change'+(n===1?'':'s');document.getElementById('cmds').classList.toggle('has',n>0);try{if(D&&D.sig)localStorage.setItem(D.sig,JSON.stringify(CHANGES));}catch(e){}}
 function revertControl(k){var el=view.querySelector('.ctl[data-k="'+k+'"]');if(el){el.value=el.dataset.def||'';var row=el.closest&&el.closest('.row');if(row)row.classList.remove('changed');}}
-function delChange(k){delete CHANGES[k];revertControl(k);renderCmds();}
+function delChange(k){delete CHANGES[k];revertControl(k);renderCmds();reconcileRefs();}
 function gotoChange(k){var c=CHANGES[k];if(!c)return;navTo((c.fid&&FORMS[c.fid])?c.fid:ORDER[0],{ctl:k});}
 function copyCmds(){var t=cmdText();if(!t)return;if(navigator.clipboard)navigator.clipboard.writeText(t);var c=document.getElementById('cmdcount'),o=c.textContent;c.textContent='copied ✓';setTimeout(function(){c.textContent=o;},900);}
 function dl(blob,name){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},150);}
-function nshBody(){var t=cmdText();return '# Generated by BIOS IFR Browser\n# Run from the UEFI shell (auto-runs as startup.nsh).\n\n'+(t||'# No changes set yet — edit settings in the app to add setup_var.efi lines.')+'\n\n# read System Language and reboot\nsetup_var.efi 0x0 -n PlatformLang -r\n';}
+function nshBody(){var t=cmdText();return '# Generated by BIOS Hidden Options Editor\n# Run from the UEFI shell (auto-runs as startup.nsh).\n\n'+(t||'# No changes set yet — edit settings in the app to add setup_var.efi lines.')+'\n\n# read System Language and reboot\nsetup_var.efi 0x0 -n PlatformLang -r\n';}
 function saveCmds(){if(!cmdText())return;dl(new Blob([nshBody()],{type:'text/plain'}),'startup.nsh');}
 function clearCmds(){CHANGES={};renderCmds();render(null);}
 // ---- USB bundle: build a .zip (stored method) entirely in-browser, no library ----
@@ -287,8 +389,8 @@ function getBins(){var sh=embTxt('bin-shell'),sv=embTxt('bin-setupvar');
  return Promise.all([fetch('assets/BOOTX64.efi').then(function(r){if(!r.ok)throw new Error('shell '+r.status);return r.arrayBuffer();}),
                      fetch('assets/setup_var.efi').then(function(r){if(!r.ok)throw new Error('setup_var '+r.status);return r.arrayBuffer();})])
         .then(function(a){return {shell:new Uint8Array(a[0]),setupvar:new Uint8Array(a[1])};});}
-var BUNDLE_README=['BIOS IFR Browser — USB bundle','=============================','','Applies BIOS settings via setup_var.efi from the UEFI shell.','','HOW TO USE','1. Copy ALL files here to the ROOT of a FAT32 USB stick, keeping the layout','   (EFI/BOOT/BOOTX64.EFI must stay at that path).','2. In BIOS: disable Secure Boot and enable USB boot.','3. Boot the stick. The shell auto-runs startup.nsh, applies your settings and','   reboots. REVIEW startup.nsh first.','','!!! WARNING: writing BIOS variables can make a system unstable or UNBOOTABLE.','Understand every command and keep a recovery path (CMOS clear / external SPI','flasher). Provided AS-IS, no warranty. Use at your own risk.','','CONTENTS','  EFI/BOOT/BOOTX64.EFI  UEFI Shell (TianoCore EDK2, built by pbatard)','  setup_var.efi         VarStore editor (datasone)','  startup.nsh           your generated commands','  licenses/, NOTICE.txt attribution + license texts','','App: https://lolwheel.github.io/ifr-browser/'].join('\n');
-var BUNDLE_NOTICE=['THIRD-PARTY COMPONENTS','======================','','Unmodified redistributions, each under its own license (see licenses/).','The BIOS IFR Browser project itself is MIT-licensed.','','1) setup_var.efi  v0.2.2  —  https://github.com/datasone/setup_var.efi','   License: MIT OR Apache-2.0','   Pinned to v0.2.2 — the last release before the v0.3 CLI-syntax change.','   The setup_var.efi commands this tool emits use the v0.2.2 syntax.','   File: setup_var.efi','   SHA-256: 889f772d546debdf0905752327fa333df24dc17966435352ac8bc047a3bc5b92','','2) UEFI Shell (EDK2)  —  https://github.com/pbatard/UEFI-Shell','   License: BSD-2-Clause-Patent','   File: EFI/BOOT/BOOTX64.EFI','   SHA-256: 4ea080ddd576117cd04f5c02d16712ea5d9249c0752214d8e4055e460d7b11e0','','Verify a file:  sha256sum <file>'].join('\n');
+var BUNDLE_README=['BIOS Hidden Options Editor — USB bundle','======================================','','Applies BIOS settings via setup_var.efi from the UEFI shell.','','HOW TO USE','1. Copy ALL files here to the ROOT of a FAT32 USB stick, keeping the layout','   (EFI/BOOT/BOOTX64.EFI must stay at that path).','2. In BIOS: disable Secure Boot and enable USB boot.','3. Boot the stick. The shell auto-runs startup.nsh, applies your settings and','   reboots. REVIEW startup.nsh first.','','!!! WARNING: writing BIOS variables can make a system unstable or UNBOOTABLE.','Understand every command and keep a recovery path (CMOS clear / external SPI','flasher). Provided AS-IS, no warranty. Use at your own risk.','','CONTENTS','  EFI/BOOT/BOOTX64.EFI  UEFI Shell (TianoCore EDK2, built by pbatard)','  setup_var.efi         VarStore editor (datasone)','  startup.nsh           your generated commands','  licenses/, NOTICE.txt attribution + license texts','','App: https://lolwheel.github.io/ifr-browser/'].join('\n');
+var BUNDLE_NOTICE=['THIRD-PARTY COMPONENTS','======================','','Unmodified redistributions, each under its own license (see licenses/).','The BIOS Hidden Options Editor project itself is MIT-licensed.','','1) setup_var.efi  v0.2.2  —  https://github.com/datasone/setup_var.efi','   License: MIT OR Apache-2.0','   Pinned to v0.2.2 — the last release before the v0.3 CLI-syntax change.','   The setup_var.efi commands this tool emits use the v0.2.2 syntax.','   File: setup_var.efi','   SHA-256: 889f772d546debdf0905752327fa333df24dc17966435352ac8bc047a3bc5b92','','2) UEFI Shell (EDK2)  —  https://github.com/pbatard/UEFI-Shell','   License: BSD-2-Clause-Patent','   File: EFI/BOOT/BOOTX64.EFI','   SHA-256: 4ea080ddd576117cd04f5c02d16712ea5d9249c0752214d8e4055e460d7b11e0','','Verify a file:  sha256sum <file>'].join('\n');
 function bundleBlob(){return getBins().then(function(b){var enc=new TextEncoder();return zipStore([
   {name:'EFI/BOOT/BOOTX64.EFI',data:b.shell},
   {name:'setup_var.efi',data:b.setupvar},
@@ -298,8 +400,9 @@ function bundleBlob(){return getBins().then(function(b){var enc=new TextEncoder(
   {name:'licenses/setup_var.efi-LICENSE-MIT.txt',data:enc.encode(embTxt('lic-setupvar')||'MIT — see https://github.com/datasone/setup_var.efi')},
   {name:'licenses/UEFI-Shell-BSD-2-Clause-Patent.txt',data:enc.encode(embTxt('lic-shell')||'BSD-2-Clause-Patent — see https://github.com/pbatard/UEFI-Shell')}
 ]);});}
-function downloadBundle(){var c=document.getElementById('cmdcount'),o=c.textContent;c.textContent='zipping…';bundleBlob().then(function(blob){dl(blob,'ifr-usb-bundle.zip');c.textContent='bundle ✓';setTimeout(function(){renderCmds();},1200);}).catch(function(e){c.textContent='bundle failed: '+(e&&e.message||e);setTimeout(function(){renderCmds();},2500);});}
+function downloadBundle(){var c=document.getElementById('cmdcount'),o=c.textContent;c.textContent='zipping…';bundleBlob().then(function(blob){dl(blob,'bios-usb-bundle.zip');c.textContent='bundle ✓';setTimeout(function(){renderCmds();},1200);}).catch(function(e){c.textContent='bundle failed: '+(e&&e.message||e);setTimeout(function(){renderCmds();},2500);});}
 function reconcileControls(){var els=view.querySelectorAll('.ctl');for(var i=0;i<els.length;i++){var el=els[i],c=CHANGES[el.dataset.k];if(c){el.value=c.val;var row=el.closest&&el.closest('.row');if(row)row.classList.add('changed');}}}
+function reconcileRefs(){var xs=view.querySelectorAll('.qx');for(var i=0;i<xs.length;i++)xs[i].classList.toggle('ov',!!CHANGES[xs[i].dataset.k]);}
 function buildSidebar(){var roots=ORDER.filter(function(fid){return !(D.incoming[fid]&&D.incoming[fid].length)});side.innerHTML='<div class="sidehdr">'+roots.length+' root forms · others via ► / search</div>'+roots.map(function(fid){return '<div class="sf" data-f="'+fid+'" onclick="entry(\''+fid+'\')" title="'+esc(TITLES[fid])+'">'+esc(TITLES[fid])+' <span style="color:#456">'+fid+'</span></div>'}).join('');}
 function buildIndex(){IDX=[];Object.keys(FORMS).forEach(function(fid){(function rec(ns){ns.forEach(function(n){if(n.op&&n.op!=='Subtitle'&&['SuppressIf','GrayOutIf','DisableIf'].indexOf(n.op)<0&&(n.label||n.hint||(n.opts&&n.opts.length))){var fields=[['name',n.label||n.op]];if(n.help)fields.push(['help',n.help]);(n.opts||[]).forEach(function(o){fields.push(['option',hx(o.v)+' = '+o.t])});if(n.meta)fields.push(['offset',n.meta]);if(n.hint)fields.push(['cmd',n.hint]);IDX.push({f:fid,lbl:n.label||n.op,fields:fields,all:fields.map(function(x){return x[1]}).join('  ').toLowerCase()});}if(n.children)rec(n.children);})})(FORMS[fid].nodes)});}
 function subOK(q,t){var ti=0,n=t.length;for(var qi=0;qi<q.length;qi++){var c=q.charCodeAt(qi);while(ti<n&&t.charCodeAt(ti)!==c)ti++;if(ti>=n)return false;ti++;}return true;}
@@ -308,7 +411,7 @@ function mark(t,pos){if(!pos||!pos.length)return esc(t.slice(0,100));var a=Math.
 function fromHash(){var f=(location.hash||'').replace(/^#/,'');return FORMS[f]?f:null;}
 var tmr;
 sb.addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(function(){
- var q=sb.value.trim().toLowerCase().replace(/\s+/g,'');if(!q){res.style.display='none';return;}
+ var q=sb.value.trim().toLowerCase().replace(/\s+/g,'');if(!q){showPresets();return;}
  var h=[];
  for(var i=0;i<IDX.length;i++){var e=IDX[i];if(!subOK(q,e.all))continue;
   var best=null;
@@ -326,21 +429,98 @@ sb.addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(function
  }).join(''):'<div class="r">no matches</div>';
  res.style.display='block';},120);});
 document.addEventListener('click',function(e){if(!e.target.closest('.sbox'))res.style.display='none'});
+sb.addEventListener('focus',function(){if(!sb.value.trim())showPresets();});
+var PRESETS=[{l:'CFG Lock',q:'cfg lock'},{l:'Overclocking',q:'overclock'},{l:'Undervolt / Voltage Offset',q:'voltage offset'},{l:'Power Limits',q:'power limit'},{l:'Turbo Ratios',q:'turbo ratio'},{l:'CPU Current Limit',q:'current limit'},{l:'VT-d / Virtualization',q:'vt-d'},{l:'Above 4G / ReBAR',q:'above 4g'},{l:'XMP Memory',q:'xmp'},{l:'Fan / Thermal',q:'fan'}];
+function showPresets(){if(!ORDER.length){res.style.display='none';return;}res.innerHTML='<div class="presets"><span class="pl">Popular hidden settings —</span>'+PRESETS.map(function(p){return '<span class="chip" onclick="runPreset(\''+p.q+'\')">'+esc(p.l)+'</span>';}).join('')+'</div>';res.style.display='block';}
+function runPreset(q){sb.value=q;sb.focus();sb.dispatchEvent(new Event('input'));}
+function showLog(){var m=document.getElementById('logmodal');var put=function(t){m.querySelector('pre').textContent=t||'No extraction log yet — load a BIOS image first.';m.style.display='flex';};if(window.__exlog)put(window.__exlog);else idbGet('exlog',function(t){window.__exlog=t||window.__exlog;put(window.__exlog);});}
+(function(){var m=document.createElement('div');m.id='logmodal';
+ m.innerHTML='<div class="box"><div class="hd"><b>Extraction log</b><span><button class="btn" id="logcopy">copy</button> <button class="btn" id="logclose">close</button></span></div><pre></pre></div>';
+ document.body.appendChild(m);
+ m.addEventListener('click',function(e){if(e.target===m)m.style.display='none';});
+ m.querySelector('#logclose').onclick=function(){m.style.display='none';};
+ m.querySelector('#logcopy').onclick=function(){var t=m.querySelector('pre').textContent;if(navigator.clipboard)navigator.clipboard.writeText(t);var b=m.querySelector('#logcopy');b.textContent='copied ✓';setTimeout(function(){b.textContent='copy';},1200);};
+})();
 document.getElementById('cmdbox').addEventListener('click',function(e){var item=e.target.closest('.citem');if(!item)return;var k=item.dataset.k;if(e.target.closest('.cdel'))delChange(k);else gotoChange(k);});
 window.addEventListener('popstate',function(e){if(!ORDER.length)return;if(e.state&&e.state.nav){nav=e.state.nav.slice();render(e.state.hl||null);}else{var f=fromHash()||ORDER[0];nav=[f];render(null);}});
 window.addEventListener('hashchange',function(){if(!ORDER.length)return;var f=fromHash();if(f&&f!==nav[nav.length-1]){nav=[f];history.replaceState({nav:nav.slice(),hl:null},'','#'+f);render(null);}});
-function load(text){try{var t0=(window.performance&&performance.now)?performance.now():0;D=buildData(text);FORMS=D.forms;ORDER=D.order;TITLES=D.titles;if(!ORDER.length){view.innerHTML='<div class="empty">No forms found — is this an IFR text dump?</div>';stats.textContent='0 forms';return;}var ms=t0?Math.round(performance.now()-t0):0;var sn=SRC?(SRC.length>32?SRC.slice(0,30)+'…':SRC):'';stats.textContent=(sn?sn+' · ':'')+ORDER.length+' forms · '+D.nset+' settings · '+D.ncond+' conditions'+(ms?(' · '+ms+'ms'):'');stats.title=SRC||'';buildSidebar();buildIndex();try{CHANGES=JSON.parse(localStorage.getItem(D.sig)||'{}')||{};}catch(e){CHANGES={};}var nch=Object.keys(CHANGES).length;if(nch)stats.textContent+=' · restored '+nch+' edit'+(nch===1?'':'s');var f=fromHash()||ORDER[0];nav=[f];history.replaceState({nav:[f],hl:null},'','#'+f);render(null);renderCmds();}catch(err){view.innerHTML='<div class="empty">Parse error: '+esc(String(err&&err.stack||err))+'</div>';}}
+function load(text,infer){try{var t0=(window.performance&&performance.now)?performance.now():0;D=buildData(text,infer);var _it=document.getElementById('infertgl');if(_it)_it.style.display=(infer&&Object.keys(infer).length)?'inline-flex':'none';FORMS=D.forms;ORDER=D.order;TITLES=D.titles;if(!ORDER.length){view.innerHTML='<div class="empty">No forms found — is this an IFR text dump?</div>';stats.textContent='0 forms';return;}var ms=t0?Math.round(performance.now()-t0):0;var sn=SRC?(SRC.length>32?SRC.slice(0,30)+'…':SRC):'';stats.textContent=(sn?sn+' · ':'')+ORDER.length+' forms · '+D.nset+' settings · '+D.ncond+' conditions'+(ms?(' · '+ms+'ms'):'');stats.title=SRC||'';buildSidebar();buildIndex();try{CHANGES=JSON.parse(localStorage.getItem(D.sig)||'{}')||{};}catch(e){CHANGES={};}var nch=Object.keys(CHANGES).length;if(nch)stats.textContent+=' · restored '+nch+' edit'+(nch===1?'':'s');var f=fromHash()||ORDER[0];nav=[f];history.replaceState({nav:[f],hl:null},'','#'+f);render(null);renderCmds();}catch(err){view.innerHTML='<div class="empty">Parse error: '+esc(String(err&&err.stack||err))+'</div>';}}
 var SRC='';
 function idbOpen(cb){try{var rq=indexedDB.open('ifrbrowser',1);rq.onupgradeneeded=function(){try{rq.result.createObjectStore('kv');}catch(e){}};rq.onsuccess=function(){cb(rq.result);};rq.onerror=function(){cb(null);};}catch(e){cb(null);}}
 function idbSet(k,v){idbOpen(function(db){if(!db)return;try{db.transaction('kv','readwrite').objectStore('kv').put(v,k);}catch(e){}});}
 function idbGet(k,cb){idbOpen(function(db){if(!db){cb(null);return;}try{var rq=db.transaction('kv','readonly').objectStore('kv').get(k);rq.onsuccess=function(){cb(rq.result||null);};rq.onerror=function(){cb(null);};}catch(e){cb(null);}});}
 function idbDel(k){idbOpen(function(db){if(!db)return;try{db.transaction('kv','readwrite').objectStore('kv')['delete'](k);}catch(e){}});}
-function clearSaved(){idbDel('ifr');idbDel('ifrname');location.reload();}
-function readFile(file){SRC=file.name;stats.textContent='parsing '+file.name+'…';var r=new FileReader();r.onload=function(){load(r.result);idbSet('ifr',r.result);idbSet('ifrname',file.name);var fb=document.getElementById('forget');if(fb)fb.style.display='';};r.readAsText(file);}
+function clearSaved(){idbDel('ifr');idbDel('ifrname');idbDel('infer');idbDel('exlog');window.__exlog=null;location.reload();}
+function headStr(a,n){var s='';for(var i=0;i<Math.min(a.length,n);i++)s+=String.fromCharCode(a[i]);return s;}
+function isFirmware(a){
+ if(a.length<64)return false;
+ if(/^Program version:/.test(headStr(a,32)))return false;                        // IFRExtractor text dump
+ if(a[0x10]===0x5A&&a[0x11]===0xA5&&a[0x12]===0xF0&&a[0x13]===0x0F)return true;   // Intel flash descriptor (0x0FF0A55A)
+ var lim=a.length-4;for(var i=0;i<lim;i++){if(a[i]===0x5F&&a[i+1]===0x46&&a[i+2]===0x56&&a[i+3]===0x48)return true;} // "_FVH" firmware volume
+ return false;
+}
+function persist(text,name,infer){idbSet('ifr',text);idbSet('ifrname',name);idbSet('infer',infer&&Object.keys(infer).length?JSON.stringify(infer):'');var fb=document.getElementById('forget');if(fb)fb.style.display='';}
+function setBusy(msg){stats.innerHTML='<span class="spin"></span>'+esc(msg);}
+function showLogBtn(b){var el=document.getElementById('logbtn');if(el)el.style.display=b?'':'none';}
+function runBios(buf,name){
+ if(window.__biosDisabled){view.innerHTML='<div class="empty">This copy has no firmware engine embedded — drop a <b>.ifr.txt</b> instead, or use the fully-offline build.</div>';stats.textContent='';return;}
+ setBusy('Reading '+name+'…');
+ view.innerHTML='<div class="empty land"><span class="spin big"></span><div class="big" style="margin-top:14px">Unlocking <b>'+esc(name)+'</b>…</div><div id="bprog" class="sub">reading firmware…</div></div>';
+ Promise.resolve(window.__biosReady).then(function(ok){
+  if(!ok)throw new Error('firmware engine unavailable');
+  return window.biosToIfr(buf,function(p){setBusy(p);var bp=document.getElementById('bprog');if(bp)bp.textContent=p;});
+ }).then(function(r){SRC=name+' (extracted)';load(r.text,r.infer);persist(r.text,SRC,r.infer);if(r.log)idbSet('exlog',r.log);showLogBtn(true);}).catch(function(err){
+  showError(name,err);showLogBtn(!!((err&&err.exlog)||window.__exlog));
+ });
+}
+function showError(name,err){
+ var hasLog=!!((err&&err.exlog)||window.__exlog);
+ view.innerHTML='<div class="empty land"><div class="big" style="color:#ff9b9b">Couldn’t read <b>'+esc(name)+'</b></div><div class="sub">'+esc(String(err&&err.message||err))+'</div>'+(hasLog?'<div style="margin-top:16px"><button class="btn" onclick="showLog()">View extraction log</button> <span class="note" style="font-size:12px">— paste this when reporting a problem</span></div>':'')+'</div>';
+ stats.textContent='couldn’t extract';
+}
+function readFile(file){SRC=file.name;stats.textContent='reading '+file.name+'…';var r=new FileReader();r.onload=function(){var buf=new Uint8Array(r.result);if(isFirmware(buf)){runBios(buf,file.name);return;}var text=new TextDecoder().decode(buf);SRC=file.name;load(text,null);persist(text,file.name,null);};r.readAsArrayBuffer(file);}
 document.getElementById('file').addEventListener('change',function(e){if(e.target.files&&e.target.files[0])readFile(e.target.files[0]);});
 window.addEventListener('dragover',function(e){e.preventDefault();document.body.classList.add('drag');});
 window.addEventListener('dragleave',function(e){if(e.relatedTarget===null||(e.clientX<=0&&e.clientY<=0))document.body.classList.remove('drag');});
 window.addEventListener('drop',function(e){e.preventDefault();document.body.classList.remove('drag');if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0])readFile(e.dataTransfer.files[0]);});
-function showPrompt(){stats.textContent='no dump loaded';view.innerHTML='<div class="empty">Drop a <b>.ifr.txt</b> dump here, or click <b>Load .ifr.txt</b> above.<br><br><span style="font-size:12px;color:#5d6f99">Everything runs in your browser — nothing is uploaded. Your dump &amp; edits are saved locally and reload automatically next time.</span></div>';}
-(function(){var raw=document.getElementById('ifr').textContent;if(raw&&raw.replace(/\s/g,'').length>40){load(raw);return;}showPrompt();idbGet('ifr',function(saved){if(saved){idbGet('ifrname',function(nm){SRC=nm||'saved dump';load(saved);var fb=document.getElementById('forget');if(fb)fb.style.display='';});}});})();
+function showPrompt(){stats.textContent='ready';view.innerHTML=
+ '<div class="empty land">'+
+ '<div class="big">Drop your <b>BIOS image</b> here</div>'+
+ '<div class="sub">…or click <b>Load BIOS</b> above. One stop: your BIOS goes in, a ready-to-boot <b>USB flash-drive bundle</b> comes out — no other downloads, nothing uploaded. It all runs here in your browser.</div>'+
+ '<div class="steps">'+
+  '<span><b>1</b> Drop your BIOS / SPI dump</span>'+
+  '<span><b>2</b> Flip the hidden settings you want</span>'+
+  '<span><b>3</b> Download the USB bundle → copy to a FAT32 stick → boot it</span>'+
+ '</div>'+
+ '<div class="note">Great for unlocking <b>CFG&nbsp;Lock</b>, <b>overclocking / undervolting</b>, power limits, VT-d, Above-4G and other hidden menus. The bundle already includes the UEFI shell and the writer tool — just copy &amp; boot.</div>'+
+ '<div class="note tiny">Already have an <code>.ifr.txt</code>? Drop it too — both are auto-detected. No dump yet? Read your BIOS with your vendor tool, AFU, or a CH341A programmer. Your dump &amp; edits stay on this device and reload next time.</div>'+
+ '</div>';}
+(function(){var ck=document.getElementById('inferck');if(ck)ck.addEventListener('change',function(){document.body.classList.toggle('show-infer',ck.checked);});})();
+/* Override condition targets: hover a reference → ⊕ → set/clear a value for that
+   VarStore byte. Overrides are ordinary startup.nsh changes; every reference to an
+   overridden byte is highlighted. */
+(function(){
+ var pop=document.createElement('div');pop.id='ovpop';
+ pop.innerHTML='<div class="t"></div><input id="ovval" placeholder="0x.. / dec" spellcheck="false" autocomplete="off"><div class="b"><button class="btn" id="ovset">Set</button><button class="btn" id="ovclr">Clear</button><button class="btn" id="ovx">×</button></div>';
+ document.body.appendChild(pop);
+ var inp=pop.querySelector('#ovval'),cur=null;
+ function openPop(qx){cur=qx;var c=CHANGES[qx.dataset.k],bn=qx.dataset.bytes;
+  pop.querySelector('.t').innerHTML='Override <b>'+esc(qx.dataset.label)+'</b><br>'+esc(qx.dataset.vsn)+':'+esc(qx.dataset.off)+' · '+bn+' byte'+(bn==='1'?'':'s')+(c?' · currently set':'');
+  inp.value=c?c.val:'';pop.style.display='block';
+  var r=qx.getBoundingClientRect();
+  pop.style.top=(window.scrollY+r.bottom+5)+'px';
+  pop.style.left=Math.max(6,Math.min(window.scrollX+r.left,window.scrollX+document.documentElement.clientWidth-pop.offsetWidth-8))+'px';
+  inp.focus();inp.select();}
+ function closePop(){pop.style.display='none';cur=null;}
+ function setOv(){if(!cur)return;var v=inp.value.trim();if(v==='')return;CHANGES[cur.dataset.k]={off:cur.dataset.off,bytes:+cur.dataset.bytes,vsn:cur.dataset.vsn,val:v,label:cur.dataset.label,disp:hx(v),fid:nav[nav.length-1]};renderCmds();reconcileControls();reconcileRefs();var cm=document.getElementById('cmds');if(cm)cm.classList.remove('collapsed');closePop();}
+ function clrOv(){if(!cur)return;var k=cur.dataset.k;delete CHANGES[k];revertControl(k);renderCmds();reconcileRefs();closePop();}
+ document.addEventListener('click',function(e){
+  var qx=e.target.closest&&e.target.closest('.qx');
+  if(qx&&!e.target.closest('a.cref')){e.preventDefault();e.stopPropagation();openPop(qx);return;}
+  if(pop.style.display==='block'&&!e.target.closest('#ovpop'))closePop();
+ },true);
+ pop.querySelector('#ovset').onclick=setOv;pop.querySelector('#ovclr').onclick=clrOv;pop.querySelector('#ovx').onclick=closePop;
+ inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();setOv();}else if(e.key==='Escape')closePop();});
+})();
+(function(){var raw=document.getElementById('ifr').textContent;if(raw&&raw.replace(/\s/g,'').length>40){load(raw,null);return;}showPrompt();idbGet('ifr',function(saved){if(saved){idbGet('ifrname',function(nm){idbGet('infer',function(inf){var im=null;try{im=inf?JSON.parse(inf):null;}catch(e){}SRC=nm||'saved dump';load(saved,im);var fb=document.getElementById('forget');if(fb)fb.style.display='';idbGet('exlog',function(lg){if(lg){window.__exlog=lg;showLogBtn(true);}});});});}});})();
 </script></body></html>
